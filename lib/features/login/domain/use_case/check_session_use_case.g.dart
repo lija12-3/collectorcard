@@ -1,0 +1,28 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'check_session_use_case.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+String _$checkSessionUseCaseHash() =>
+    r'ca6c79fa7988571b184fd9152eccb052e4fb92c4';
+
+/// See also [checkSessionUseCase].
+@ProviderFor(checkSessionUseCase)
+final checkSessionUseCaseProvider = Provider<CheckSessionUseCase>.internal(
+  checkSessionUseCase,
+  name: r'checkSessionUseCaseProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$checkSessionUseCaseHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CheckSessionUseCaseRef = ProviderRef<CheckSessionUseCase>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

@@ -1,0 +1,17 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$LoginResponseImpl _$$LoginResponseImplFromJson(Map<String, dynamic> json) =>
+    _$LoginResponseImpl(
+      status: json['status'] as String,
+      data: LoginData.fromJson(json['data'] as Map<String, dynamic>),
+      message: json['message'] as String?,
+    );
+
+Map<String, dynamic> _$$LoginResponseImplToJson(_$LoginResponseImpl instance) =>
+    <String, dynamic>{
+      'status': instance.status,
+      'data': instance.data,
+      'message': instance.message,
+    };
