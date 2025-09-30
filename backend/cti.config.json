@@ -1,0 +1,22 @@
+{
+  "inputDirectory": "./shared",
+  "outputFile": "./shared/index.ts",
+  "fileHeader": "// Auto-generated index file for shared libraries\n// Do not edit manually - use 'npm run generate-index' to regenerate\n",
+  "fileFooter": "\n// End of auto-generated index file",
+  "excludePatterns": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/node_modules/**",
+    "**/dist/**"
+  ],
+  "includePatterns": [
+    "**/*.ts"
+  ],
+  "excludeExports": [
+    "default"
+  ],
+  "addNewlineAtEndOfFile": true,
+  "useSemicolon": true,
+  "useTimestamp": true,
+  "sortExports": true
+}

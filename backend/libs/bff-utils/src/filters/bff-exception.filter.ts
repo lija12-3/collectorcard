@@ -7,7 +7,16 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { createErrorResponse } from '@shared/utils';
+// Create a simple error response function locally to avoid import issues
+function createErrorResponse(error: string, message?: string) {
+  return {
+    success: false,
+    data: undefined,
+    error,
+    message,
+    timestamp: new Date().toISOString(),
+  };
+}
 
 @Catch()
 export class BffExceptionFilter implements ExceptionFilter {

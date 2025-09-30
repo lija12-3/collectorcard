@@ -18,13 +18,12 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@cardinal/*": ["libs/*/src"],
       "@shared/*": ["shared/*"]
     }
   },
   "include": [
+    "apps/**/*",
     "libs/**/*",
-    "services/**/*",
     "shared/**/*"
   ],
   "exclude": [

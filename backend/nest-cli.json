@@ -9,31 +9,31 @@
     "tsConfigPath": "tsconfig.json"
   },
   "projects": {
-    "ms-1": {
+    "transactions": {
       "type": "application",
-      "root": "backend/apps/ms-1",
+      "root": "backend/apps/transactions",
       "entryFile": "main",
-      "sourceRoot": "backend/apps/ms-1/src",
+      "sourceRoot": "backend/apps/transactions/src",
       "compilerOptions": {
-        "tsConfigPath": "backend/apps/ms-1/tsconfig.json"
+        "tsConfigPath": "backend/apps/transactions/tsconfig.json"
       }
     },
-    "ms-2": {
+    "notifications": {
       "type": "application",
-      "root": "backend/apps/ms-2",
+      "root": "backend/apps/notifications",
       "entryFile": "main",
-      "sourceRoot": "backend/apps/ms-2/src",
+      "sourceRoot": "backend/apps/notifications/src",
       "compilerOptions": {
-        "tsConfigPath": "backend/apps/ms-2/tsconfig.json"
+        "tsConfigPath": "backend/apps/notifications/tsconfig.json"
       }
     },
-    "sv-3": {
+    "lambdas": {
       "type": "application",
-      "root": "backend/apps/sv-3",
+      "root": "backend/apps/lambdas",
       "entryFile": "main",
-      "sourceRoot": "backend/apps/sv-3/src",
+      "sourceRoot": "backend/apps/lambdas/src",
       "compilerOptions": {
-        "tsConfigPath": "backend/apps/sv-3/tsconfig.json"
+        "tsConfigPath": "backend/apps/lambdas/tsconfig.json"
       }
     },
     "http-clients-aws-sns": {
