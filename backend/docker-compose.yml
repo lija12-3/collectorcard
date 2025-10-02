@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: cardinal-postgres
+    environment:
+      POSTGRES_DB: cardinal
+      POSTGRES_USER: cardinal
+      POSTGRES_PASSWORD: cardinal123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cardinal-network
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: cardinal-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cardinal-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: cardinal-notification-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://cardinal:cardinal123@postgres:5432/cardinal
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3001:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cardinal-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: cardinal-payment-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://cardinal:cardinal123@postgres:5432/cardinal
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3002:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cardinal-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: cardinal-user-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://cardinal:cardinal123@postgres:5432/cardinal
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3003:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cardinal-network
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    container_name: cardinal-analytics-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://cardinal:cardinal123@postgres:5432/cardinal
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3004:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cardinal-network
+
+  # Content Service
+  content-service:
+    build:
+      context: ./services/content-service
+      dockerfile: Dockerfile
+    container_name: cardinal-content-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://cardinal:cardinal123@postgres:5432/cardinal
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3005:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cardinal-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  cardinal-network:
+    driver: bridge
