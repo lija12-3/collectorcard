@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "webpackConfigPath": "webpack.config.js",
+    "tsConfigPath": "tsconfig.json"
+  },
+  "projects": {
+    "transactions": {
+      "type": "application",
+      "root": "backend/apps/transactions",
+      "entryFile": "main",
+      "sourceRoot": "backend/apps/transactions/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/apps/transactions/tsconfig.json"
+      }
+    },
+    "notifications": {
+      "type": "application",
+      "root": "backend/apps/notifications",
+      "entryFile": "main",
+      "sourceRoot": "backend/apps/notifications/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/apps/notifications/tsconfig.json"
+      }
+    },
+    "lambdas": {
+      "type": "application",
+      "root": "backend/apps/lambdas",
+      "entryFile": "main",
+      "sourceRoot": "backend/apps/lambdas/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/apps/lambdas/tsconfig.json"
+      }
+    },
+    "http-clients-aws-sns": {
+      "type": "library",
+      "root": "backend/libs/http-clients/aws/sns",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/http-clients/aws/sns/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/http-clients/aws/sns/tsconfig.json"
+      }
+    },
+    "http-clients-aws-keystore": {
+      "type": "library",
+      "root": "backend/libs/http-clients/aws/keystore",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/http-clients/aws/keystore/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/http-clients/aws/keystore/tsconfig.json"
+      }
+    },
+    "http-clients-aws-ses": {
+      "type": "library",
+      "root": "backend/libs/http-clients/aws/ses",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/http-clients/aws/ses/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/http-clients/aws/ses/tsconfig.json"
+      }
+    },
+    "http-clients-aws-sqs": {
+      "type": "library",
+      "root": "backend/libs/http-clients/aws/sqs",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/http-clients/aws/sqs/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/http-clients/aws/sqs/tsconfig.json"
+      }
+    },
+    "error-handlers": {
+      "type": "library",
+      "root": "backend/libs/error-handlers",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/error-handlers/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/error-handlers/tsconfig.json"
+      }
+    },
+    "authentication": {
+      "type": "library",
+      "root": "backend/libs/authentication",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/authentication/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/authentication/tsconfig.json"
+      }
+    },
+    "bff-utils": {
+      "type": "library",
+      "root": "backend/libs/bff-utils",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/bff-utils/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/bff-utils/tsconfig.json"
+      }
+    },
+    "database": {
+      "type": "library",
+      "root": "backend/libs/database",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/database/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/database/tsconfig.json"
+      }
+    },
+    "logger": {
+      "type": "library",
+      "root": "backend/libs/logger",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/logger/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/logger/tsconfig.json"
+      }
+    },
+    "third-party": {
+      "type": "library",
+      "root": "backend/libs/third-party",
+      "entryFile": "index",
+      "sourceRoot": "backend/libs/third-party/src",
+      "compilerOptions": {
+        "tsConfigPath": "backend/libs/third-party/tsconfig.json"
+      }
+    }
+  }
+}

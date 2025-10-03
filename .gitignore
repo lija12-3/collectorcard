@@ -50,3 +50,6 @@ lib/generated_plugin_registrant.dart
 # Misc
 .DS_Store
 *.log
+
+#backend Node
+node_modules/
