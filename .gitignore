@@ -12,6 +12,8 @@ android/**/GeneratedPluginRegistrant.java
 *.apk
 *.aar
 *.iml
+# env files
+.env*
 
 # iOS
 ios/Flutter/.last_build_id
