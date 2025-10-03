@@ -8,141 +8,109 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
-      colorScheme:
-          ColorScheme.fromSwatch(
-            primarySwatch: AppColors.primarySwatch,
-            brightness: Brightness.light,
-          ).copyWith(
-            surface: AppColors.background,
-            primary: AppColors.primary,
-            onPrimary: AppColors.buttonText,
-            secondary: AppColors.secondary,
-            onSecondary: Colors.white,
-            error: AppColors.error,
-            onError: Colors.white,
-            onSurface: AppColors.textPrimary,
-            surfaceContainerHighest: AppColors.inputBackground,
-            onSurfaceVariant: AppColors.textSecondary,
-          ),
-      scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
+      colorScheme: ColorScheme(
+        brightness: Brightness.light,
+        primary: AppColors.primaryAccentBackground,
+        onPrimary: AppColors.vibrantAccentText,
+        secondary: AppColors.secondaryAccentAlphaBackground,
+        onSecondary: AppColors.subtleAccentText,
+        error: AppColors.vibrantSemanticErrorFill,
+        onError: AppColors.vibrantSemanticErrorText,
+        surface: AppColors.eggshell,
+        onSurface: AppColors.rocket,
+      ),
+      scaffoldBackgroundColor: AppColors.eggshell,
+
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.eggshell,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+        iconTheme: IconThemeData(color: AppColors.rocket),
+        titleTextStyle: AppTextStyles.headingLarge.copyWith(
+          color: AppColors.rocket,
         ),
       ),
+
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.buttonPrimary,
-          foregroundColor: AppColors.buttonText,
-          elevation: 0,
+          backgroundColor: AppColors.vibrantAccentFill,
+          foregroundColor: AppColors.vibrantAccentText,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
+
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.primaryAccentBackground,
           textStyle: AppTextStyles.buttonText,
         ),
       ),
+
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
+          foregroundColor: AppColors.primaryAccentBackground,
+          side: BorderSide(color: AppColors.subtleStaticAccentBorder),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
+
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.inputBackground,
+        fillColor: AppColors.eggshell,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputBorder),
+          borderSide: BorderSide(color: AppColors.subtleStaticAccentBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputBorder),
+          borderSide: BorderSide(color: AppColors.subtleStaticAccentBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppColors.inputFocusedBorder,
+          borderSide: BorderSide(
+            color: AppColors.vibrantAccentBorder,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: AppColors.vibrantSemanticErrorFill),
         ),
         contentPadding: const EdgeInsets.all(16),
-        hintStyle: const TextStyle(color: AppColors.inputPlaceholder),
-        labelStyle: const TextStyle(color: AppColors.inputLabel),
+        hintStyle: TextStyle(color: AppColors.misty),
+        labelStyle: TextStyle(color: AppColors.ash),
       ),
-      dividerColor: AppColors.border,
-      dividerTheme: const DividerThemeData(
-        color: AppColors.border,
-        thickness: 1,
-      ),
+
       cardTheme: CardThemeData(
-        color: AppColors.background,
-        elevation: 2,
+        color: AppColors.eggshell,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.background,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        elevation: 8,
+
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.eggshell,
+        selectedItemColor: AppColors.vibrantAccentFill,
+        unselectedItemColor: AppColors.misty,
       ),
+
       textTheme: TextTheme(
         displayLarge: AppTextStyles.mainHeading.copyWith(
-          color: AppColors.textPrimary,
+          color: AppColors.rocket,
         ),
         displayMedium: AppTextStyles.headingLarge.copyWith(
-          color: AppColors.textPrimary,
+          color: AppColors.rocket,
         ),
         displaySmall: AppTextStyles.headingMedium.copyWith(
-          color: AppColors.textPrimary,
+          color: AppColors.rocket,
         ),
-        headlineLarge: AppTextStyles.headingSmall.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        headlineMedium: AppTextStyles.subtitle.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        headlineSmall: AppTextStyles.labelText.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        titleLarge: AppTextStyles.subtitle.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        titleMedium: AppTextStyles.labelText.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        bodyLarge: AppTextStyles.bodyLarge.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        bodyMedium: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
-        ),
+        bodyLarge: AppTextStyles.bodyLarge.copyWith(color: AppColors.rocket),
+        bodyMedium: AppTextStyles.bodyMedium.copyWith(color: AppColors.ash),
         labelLarge: AppTextStyles.buttonText.copyWith(
-          color: AppColors.buttonText,
-        ),
-        bodySmall: AppTextStyles.caption.copyWith(
-          color: AppColors.textSecondary,
-        ),
-        labelSmall: AppTextStyles.caption.copyWith(
-          color: AppColors.textSecondary,
+          color: AppColors.vibrantAccentText,
         ),
       ),
     );
@@ -151,38 +119,30 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      colorScheme:
-          ColorScheme.fromSwatch(
-            primarySwatch: AppColors.primarySwatch,
-            brightness: Brightness.dark,
-          ).copyWith(
-            surface: AppColors.darkSurface,
-            primary: AppColors.primary,
-            onPrimary: AppColors.buttonText,
-            secondary: AppColors.secondary,
-            onSecondary: Colors.white,
-            error: AppColors.error,
-            onError: Colors.white,
-            onSurface: AppColors.darkTextPrimary,
-            surfaceContainerHighest: AppColors.darkInputBackground,
-            onSurfaceVariant: AppColors.darkTextSecondary,
-          ),
-      scaffoldBackgroundColor: AppColors.darkBackground,
+      colorScheme: ColorScheme(
+        brightness: Brightness.dark,
+        primary: AppColors.primaryAccentBackground,
+        onPrimary: AppColors.vibrantAccentText,
+        secondary: AppColors.secondaryAccentAlphaBackground,
+        onSecondary: AppColors.subtleAccentText,
+        error: AppColors.vibrantSemanticErrorFill,
+        onError: AppColors.vibrantSemanticErrorText,
+        surface: AppColors.rocket,
+        onSurface: AppColors.eggshell,
+      ),
+      scaffoldBackgroundColor: AppColors.rocket,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.darkBackground,
+        backgroundColor: AppColors.rocket,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
-        titleTextStyle: TextStyle(
-          color: AppColors.darkTextPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+        iconTheme: IconThemeData(color: AppColors.eggshell),
+        titleTextStyle: AppTextStyles.headingLarge.copyWith(
+          color: AppColors.eggshell,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.buttonPrimary,
-          foregroundColor: AppColors.buttonText,
-          elevation: 0,
+          backgroundColor: AppColors.vibrantAccentFill,
+          foregroundColor: AppColors.vibrantAccentText,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -191,14 +151,14 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.primaryAccentBackground,
           textStyle: AppTextStyles.buttonText,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
+          foregroundColor: AppColors.primaryAccentBackground,
+          side: BorderSide(color: AppColors.subtleStaticAccentBorder),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -207,79 +167,53 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.darkInputBackground,
+        fillColor: AppColors.rocket,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.darkInputBorder),
+          borderSide: BorderSide(color: AppColors.subtleStaticAccentBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.darkInputBorder),
+          borderSide: BorderSide(color: AppColors.subtleStaticAccentBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.inputFocusedBorder, width: 2),
+          borderSide: BorderSide(
+            color: AppColors.vibrantAccentBorder,
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: AppColors.vibrantSemanticErrorFill),
         ),
         contentPadding: const EdgeInsets.all(16),
-        hintStyle: TextStyle(color: AppColors.darkInputPlaceholder),
-        labelStyle: TextStyle(color: AppColors.darkInputLabel),
+        hintStyle: TextStyle(color: AppColors.misty),
+        labelStyle: TextStyle(color: AppColors.ash),
       ),
-      dividerColor: AppColors.darkBorder,
-      dividerTheme: DividerThemeData(color: AppColors.darkBorder, thickness: 1),
       cardTheme: CardThemeData(
-        color: AppColors.darkSurface,
-        elevation: 2,
+        color: AppColors.rocket,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.darkSurface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.darkTextSecondary,
-        elevation: 8,
+        backgroundColor: AppColors.rocket,
+        selectedItemColor: AppColors.vibrantAccentFill,
+        unselectedItemColor: AppColors.misty,
       ),
       textTheme: TextTheme(
         displayLarge: AppTextStyles.mainHeading.copyWith(
-          color: AppColors.darkTextPrimary,
+          color: AppColors.eggshell,
         ),
         displayMedium: AppTextStyles.headingLarge.copyWith(
-          color: AppColors.darkTextPrimary,
+          color: AppColors.eggshell,
         ),
         displaySmall: AppTextStyles.headingMedium.copyWith(
-          color: AppColors.darkTextPrimary,
+          color: AppColors.eggshell,
         ),
-        headlineLarge: AppTextStyles.headingSmall.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
-        headlineMedium: AppTextStyles.subtitle.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
-        headlineSmall: AppTextStyles.labelText.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
-        titleLarge: AppTextStyles.subtitle.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
-        titleMedium: AppTextStyles.labelText.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
-        bodyLarge: AppTextStyles.bodyLarge.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
-        bodyMedium: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.darkTextPrimary,
-        ),
+        bodyLarge: AppTextStyles.bodyLarge.copyWith(color: AppColors.eggshell),
+        bodyMedium: AppTextStyles.bodyMedium.copyWith(color: AppColors.ash),
         labelLarge: AppTextStyles.buttonText.copyWith(
-          color: AppColors.buttonText,
-        ),
-        bodySmall: AppTextStyles.caption.copyWith(
-          color: AppColors.darkTextSecondary,
-        ),
-        labelSmall: AppTextStyles.caption.copyWith(
-          color: AppColors.darkTextSecondary,
+          color: AppColors.vibrantAccentText,
         ),
       ),
     );

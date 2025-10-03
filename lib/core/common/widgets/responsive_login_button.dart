@@ -21,26 +21,22 @@ class ResponsiveLoginButton extends StatelessWidget with ResponsiveBuilder {
   @override
   Widget build(BuildContext context) {
     final isMobileScreen = isMobile(context);
-    // ignore: unused_local_variable
-    final isDesktopScreen = isDesktop(context);
     final isTabletScreen = isTablet(context);
 
     if (isMobileScreen || isTabletScreen) {
-      // Mobile: Fixed width centered button (handled in CTA section)
       return SizedBox(
-        width: 325,
+        width: double.infinity,
         height: 50,
         child: _buildButton(context, isMobile: true),
       );
     } else {
-      // Desktop/Tablet: Right-aligned button with fixed width
       return SizedBox(
         width: double.infinity,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             SizedBox(
-              width: 264, // Slightly wider for tablet
+              width: 264,
               height: 50,
               child: _buildButton(context, isMobile: false),
             ),
@@ -52,29 +48,38 @@ class ResponsiveLoginButton extends StatelessWidget with ResponsiveBuilder {
 
   Widget _buildButton(BuildContext context, {required bool isMobile}) {
     return ElevatedButton(
-      onPressed: isEnabled ? onPressed : null,
+      onPressed: isEnabled && !isLoading ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        disabledBackgroundColor: AppColors.buttonPrimaryDisabled,
-        backgroundColor: AppColors.buttonPrimary,
+        backgroundColor: isEnabled
+            ? AppColors
+                  .lavender // Accent purple (active)
+            : AppColors.pewter, // Disabled state
+        disabledBackgroundColor: AppColors.pewter,
+        foregroundColor: AppColors.eggshell,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isMobile ? 6 : 8),
+          borderRadius: BorderRadius.circular(12), // consistent with inputs
         ),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
+        elevation: 0,
       ),
       child: isLoading
           ? const SizedBox(
-              height: 20,
-              width: 20,
+              height: 22,
+              width: 22,
               child: CircularProgressIndicator(
-                color: Colors.white,
                 strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.eggshell),
               ),
             )
           : Text(
               text?.toUpperCase() ?? "LOGIN",
               style: isMobile
-                  ? AppTextStyles.mobileButtonText
-                  : AppTextStyles.buttonText,
+                  ? AppTextStyles.mobileButtonText.copyWith(
+                      color: AppColors.eggshell,
+                    )
+                  : AppTextStyles.buttonText.copyWith(
+                      color: AppColors.eggshell,
+                    ),
             ),
     );
   }

@@ -28,11 +28,13 @@ class CustomRadioButton extends StatelessWidget with ResponsiveBuilder {
         height: 32,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.backgroundGray : Colors.transparent,
+          color:
+              // isSelected ? AppColors.backgroundGray :
+              Colors.transparent,
           border: Border.all(
             color: isSelected
-                ? AppColors.borderLight
-                : AppColors.border.withValues(alpha: 0.6),
+                ? AppColors.primaryAccentAlphaBackground
+                : AppColors.ash,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(6),

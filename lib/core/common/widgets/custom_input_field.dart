@@ -68,22 +68,24 @@ class _CustomInputFieldState extends State<CustomInputField> {
       keyboardType: widget.keyboardType,
       maxLines: widget.maxLines,
       enabled: widget.enabled,
-      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.inputText),
+      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.eggshell),
       decoration: InputDecoration(
         hintText: widget.placeholder,
-        hintStyle: AppTextStyles.placeholderText,
+        hintStyle: AppTextStyles.placeholderText.copyWith(
+          color: AppColors.misty,
+        ),
         filled: true,
-        fillColor: AppColors.inputBackground,
+        fillColor: AppColors.boulder, // dark background
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: widget.maxLines == 1 ? 14 : 16,
+          vertical: widget.maxLines == 1 ? 16 : 18,
         ),
         prefixIcon: widget.prefixIcon,
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
                   _isObscured ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.textPlaceholder,
+                  color: AppColors.lavender, // accent toggle
                   size: 20,
                 ),
                 onPressed: () {
@@ -95,35 +97,35 @@ class _CustomInputFieldState extends State<CustomInputField> {
             : widget.suffixIcon,
         // Border styling
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.ash, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.ash, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.inputFocusedBorder, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.lavender, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.error, width: 1),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.vermillion, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.error, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.vermillion, width: 2),
         ),
         disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: AppColors.inputBorder.withValues(alpha: 0.5),
+            color: AppColors.ash.withValues(alpha: 0.4),
             width: 1,
           ),
         ),
-        // Error text handling
+        // Error text
         errorText: widget.errorText,
-        errorStyle: AppTextStyles.caption.copyWith(color: AppColors.error),
+        errorStyle: AppTextStyles.caption.copyWith(color: AppColors.vermillion),
       ),
     );
   }

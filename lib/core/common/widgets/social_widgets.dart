@@ -29,8 +29,8 @@ class SocialButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.buttonSecondary,
-          foregroundColor: AppColors.buttonTextSecondary,
+          backgroundColor: AppColors.primaryAccentBackground,
+          foregroundColor: AppColors.primaryAccentAlphaBackground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -43,8 +43,9 @@ class SocialButton extends StatelessWidget {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppColors.textSecondary),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.subtleAccentText,
+                  ),
                 ),
               )
             : Row(
@@ -52,10 +53,7 @@ class SocialButton extends StatelessWidget {
                 children: [
                   icon,
                   const SizedBox(width: 16),
-                  Text(
-                    text,
-                    style: AppTextStyles.socialButtonText,
-                  ),
+                  Text(text, style: AppTextStyles.socialButtonText),
                 ],
               ),
       ),
@@ -74,7 +72,8 @@ class GoogleIcon extends StatelessWidget {
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: NetworkImage(
-              'https://developers.google.com/identity/images/g-logo.png'),
+            'https://developers.google.com/identity/images/g-logo.png',
+          ),
           fit: BoxFit.contain,
         ),
       ),
@@ -91,7 +90,7 @@ class FacebookIcon extends StatelessWidget {
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: AppColors.facebook,
+        color: AppColors.secondaryAccentBackground,
         borderRadius: BorderRadius.circular(4),
       ),
       child: const Center(

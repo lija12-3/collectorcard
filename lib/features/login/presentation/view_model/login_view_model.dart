@@ -20,12 +20,15 @@ class LoginViewModel extends _$LoginViewModel {
     return const LoginState();
   }
 
-  void updateLastName({required String lastName}) {
-    state = state.copyWith(
-      lastName: lastName,
+  LoginState _resetProgress(LoginState newState) {
+    return newState.copyWith(
       isLoginComplete: const AsyncValue.data(false),
       errorMessage: "",
     );
+  }
+
+  void updateLastName({required String lastName}) {
+    state = _resetProgress(state.copyWith(lastName: lastName));
   }
 
   void updateContact({required String contact}) {

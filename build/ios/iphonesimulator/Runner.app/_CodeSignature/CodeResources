@@ -46,7 +46,7 @@
 		</data>
 		<key>Frameworks/App.framework/App</key>
 		<data>
-		Igi9bMoQyqKGzQivAMqVluAE4EA=
+		hkJ0/dC3dH7XxKKyHLWaGvbMkQ8=
 		</data>
 		<key>Frameworks/App.framework/Info.plist</key>
 		<data>
@@ -54,7 +54,7 @@
 		</data>
 		<key>Frameworks/App.framework/_CodeSignature/CodeResources</key>
 		<data>
-		yHHG7IIAdqjKP5p/YJvLxebqmac=
+		Ppz6onuMXXWAQ7UOFm7vLzwyjSY=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/.env.dev</key>
 		<data>
@@ -102,7 +102,7 @@
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/kernel_blob.bin</key>
 		<data>
-		TI5hDm/3bHq+Xbktj/SKl8U2X1I=
+		+Sjh7w4AwsK7pGotrZAFPT4pZ54=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/packages/amplify_auth_cognito_dart/lib/src/workers/workers.min.js</key>
 		<data>
@@ -525,7 +525,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			f1K2GWG6EgvcU8qbRaq7GkooiRKTJZ60/ikuqVArHUk=
+			9tJ7evtdJBxxa6KrsajWMJRN6qltPFknfw0YgcmXzyc=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/Info.plist</key>
@@ -539,7 +539,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			VaA4xBY0IhlxDS2i+PeIvZx6RkzygkM5TvcySJ7K4pg=
+			Ym3aYnvfmiA07SMG7+4RvOH+W096lhWGmm4zx1Cz6bo=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/.env.dev</key>
@@ -623,7 +623,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			te95Q6RaPQ4Eo/awkfTlM7J8tHfDFR+oJoNEK75nkmA=
+			ea2YAK1L1Lmd9RstkdlwybPLdpB2Je7xHky7NkyfSkQ=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/packages/amplify_auth_cognito_dart/lib/src/workers/workers.min.js</key>

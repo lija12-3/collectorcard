@@ -23,16 +23,21 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = isSecondary
+        ? AppColors.eggshell
+        : AppColors.vibrantAccentFill;
+
+    final textColor = isSecondary
+        ? AppColors.rocket
+        : AppColors.vibrantAccentText;
+
     return SizedBox(
       width: width ?? double.infinity,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              isSecondary ? AppColors.buttonSecondary : AppColors.buttonPrimary,
-          foregroundColor: isSecondary
-              ? AppColors.buttonTextSecondary
-              : AppColors.buttonText,
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -45,16 +50,14 @@ class CustomButton extends StatelessWidget {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.vibrantAccentText,
+                  ),
                 ),
               )
             : Text(
                 text,
-                style: AppTextStyles.buttonText.copyWith(
-                  color: isSecondary
-                      ? AppColors.buttonTextSecondary
-                      : AppColors.buttonText,
-                ),
+                style: AppTextStyles.buttonText.copyWith(color: textColor),
               ),
       ),
     );

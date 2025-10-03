@@ -1,49 +1,47 @@
-import 'package:collectors_card/core/base/responsive_builder_mixin.dart';
 import 'package:collectors_card/features/login/presentation/state/login_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/common/enums/contact_type.dart';
 import '../../../../core/common/widgets/custom_input_field.dart';
-import '../../../../core/common/widgets/custom_radio_button.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../view_model/login_view_model.dart';
 
-class LoginForm extends ConsumerWidget with ResponsiveBuilder {
+class LoginForm extends ConsumerWidget {
   const LoginForm({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loginState = ref.watch(loginViewModelProvider);
     final loginNotifier = ref.read(loginViewModelProvider.notifier);
-    final isMobileScreen = isMobile(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildFieldWithLabel(
+        // Last Name field
+        _FieldWithLabel(
           label: "Last Name",
-          isMobile: isMobileScreen,
           child: CustomInputField(
-            label: isMobileScreen ? "" : "Last Name",
-            placeholder: isMobileScreen ? " " : "Enter your last name",
+            label: "",
+            placeholder: "Enter your last name",
             value: loginState.lastName,
             onChanged: (value) => loginNotifier.updateLastName(lastName: value),
           ),
         ),
+        const SizedBox(height: 24),
 
-        SizedBox(height: isMobileScreen ? 16 : 24),
-
-        _buildFieldWithLabel(
+        // Contact field with radio switch (Phone / Email)
+        _FieldWithLabel(
           label: "Contact",
-          isMobile: isMobileScreen,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildContactTypeRadios(
-                loginState,
-                loginNotifier,
-                isMobileScreen,
+              _ContactTypeRadios(
+                loginState: loginState,
+                loginNotifier: loginNotifier,
               ),
-              SizedBox(height: isMobileScreen ? 16 : 16),
+              const SizedBox(height: 16),
               CustomInputField(
                 label: "",
                 placeholder: loginState.contactType == ContactType.phone
@@ -51,7 +49,11 @@ class LoginForm extends ConsumerWidget with ResponsiveBuilder {
                     : "Enter your email",
                 value: loginState.contact,
                 prefixIcon: loginState.contactType == ContactType.phone
-                    ? Icon(Icons.phone, size: 16, color: Color(0xFF51534A))
+                    ? Icon(
+                        Icons.phone,
+                        size: 18,
+                        color: AppColors.misty,
+                      ) // subtle icon
                     : null,
                 keyboardType: loginState.contactType == ContactType.phone
                     ? TextInputType.phone
@@ -62,13 +64,13 @@ class LoginForm extends ConsumerWidget with ResponsiveBuilder {
             ],
           ),
         ),
+        const SizedBox(height: 24),
 
-        SizedBox(height: isMobileScreen ? 16 : 24),
-        _buildFieldWithLabel(
+        // PSP ID field
+        _FieldWithLabel(
           label: "PSP ID",
-          isMobile: isMobileScreen,
           child: CustomInputField(
-            label: isMobileScreen ? "" : "PSP ID",
+            label: "",
             placeholder: "123456789",
             value: loginState.pspId,
             keyboardType: TextInputType.number,
@@ -78,21 +80,28 @@ class LoginForm extends ConsumerWidget with ResponsiveBuilder {
       ],
     );
   }
+}
 
-  Widget _buildContactTypeRadios(
-    LoginState loginState,
-    LoginViewModel loginNotifier,
-    bool isMobile,
-  ) {
+class _ContactTypeRadios extends StatelessWidget {
+  final LoginState loginState;
+  final LoginViewModel loginNotifier;
+
+  const _ContactTypeRadios({
+    required this.loginState,
+    required this.loginNotifier,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
-        CustomRadioButton(
+        _RadioChip(
           text: "Phone",
           isSelected: loginState.contactType == ContactType.phone,
           onTap: () => loginNotifier.updateContactType(contactType: "phone"),
         ),
-        SizedBox(width: isMobile ? 24 : 24),
-        CustomRadioButton(
+        const SizedBox(width: 16),
+        _RadioChip(
           text: "Email",
           isSelected: loginState.contactType == ContactType.email,
           onTap: () => loginNotifier.updateContactType(contactType: "email"),
@@ -100,23 +109,63 @@ class LoginForm extends ConsumerWidget with ResponsiveBuilder {
       ],
     );
   }
+}
 
-  Widget _buildFieldWithLabel({
-    required String label,
-    required Widget child,
-    required bool isMobile,
-  }) {
+class _RadioChip extends StatelessWidget {
+  final String text;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _RadioChip({
+    required this.text,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.lavender : AppColors.boulder,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppColors.lavender : AppColors.pewter,
+          ),
+        ),
+        child: Text(
+          text,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isSelected ? AppColors.rocket : AppColors.lavender,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FieldWithLabel extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _FieldWithLabel({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label.isNotEmpty)
-          Text(
-            label,
-            style: isMobile
-                ? AppTextStyles.mobileLabelText
-                : AppTextStyles.labelText,
+        Text(
+          label,
+          style: AppTextStyles.labelText.copyWith(
+            color: AppColors.lavender, // accent purple
           ),
-        if (label.isNotEmpty) const SizedBox(height: 4),
+        ),
+        const SizedBox(height: 8),
         child,
       ],
     );

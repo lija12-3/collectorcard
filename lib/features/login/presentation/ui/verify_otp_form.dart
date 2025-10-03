@@ -36,10 +36,10 @@ class VerifyOtpForm extends ConsumerWidget with ResponsiveBuilder {
           "We have sent a 6-digit code to ${_formatContact(loginState.contact)}. ${isMobileScreen ? '' : 'By confirming the email address, you can get access to all features.'}",
           style: isMobileScreen
               ? AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: AppColors.subtleAccentText,
                 )
               : AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: AppColors.subtleAccentText,
                 ),
         ),
         SizedBox(height: isMobileScreen ? 32 : 48),
@@ -67,7 +67,7 @@ class VerifyOtpForm extends ConsumerWidget with ResponsiveBuilder {
             height: 24,
             child: Icon(
               Icons.chevron_left,
-              color: AppColors.textPrimary,
+              color: AppColors.subtleAccentText,
               size: 18,
             ),
           ),
@@ -77,7 +77,7 @@ class VerifyOtpForm extends ConsumerWidget with ResponsiveBuilder {
           "Login",
           style: AppTextStyles.bodyLarge.copyWith(
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: AppColors.subtleAccentText,
           ),
         ),
       ],
@@ -159,8 +159,8 @@ class VerifyOtpForm extends ConsumerWidget with ResponsiveBuilder {
           timerText,
           style: AppTextStyles.buttonText.copyWith(
             color: isEnabled
-                ? AppColors.textPrimary
-                : AppColors.textSecondary.withValues(alpha: 0.32),
+                ? AppColors.subtleAccentText
+                : AppColors.subtleAccentText.withValues(alpha: 0.32),
             fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
