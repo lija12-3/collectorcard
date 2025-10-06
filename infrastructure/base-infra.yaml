@@ -4,7 +4,7 @@ Description: YAML to create following
   2) Create and attach InternetGateway
   3) Create 2 public subnets, 2 private subnets and 2 data subnets
   4) Create public route table and associate to public subnets
-  5) Create Elastic IPs for NatGateway and assoicate with public Subnet
+  5) Create Elastic IPs for NatGateway and associate with public Subnet
   6) Create private route table and associate to private subnet
   7) Create Data route table and associate to Data subnet
   8) Create One Security Group
@@ -37,9 +37,9 @@ Parameters:
     Default: 10.192.21.0/24
 
   PrivateSubnet3CIDR:
-      Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone
-      Type: String
-      Default: 10.192.22.0/24
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone
+    Type: String
+    Default: 10.192.22.0/24
 
   DataSubnet1CIDR:
     Description: Please enter the IP range (CIDR notation) for the Data subnet in the first Availability Zone
@@ -425,21 +425,13 @@ Resources:
           FromPort: 0
           ToPort: 65535
           CidrIp: 0.0.0.0/0
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          CidrIp: 0.0.0.0/0
+      # Allow external access if needed, else keep it empty
+      SecurityGroupIngress: []
       Tags:
         - Key: Name
           Value: !Ref AWS::StackName
       VpcId: !Ref VPC
 
-#output
 Outputs:
   VpcID:
     Description: VpcId
