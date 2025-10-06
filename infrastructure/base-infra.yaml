@@ -36,11 +36,6 @@ Parameters:
     Type: String
     Default: 10.192.21.0/24
 
-  PrivateSubnet3CIDR:
-    Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone
-    Type: String
-    Default: 10.192.22.0/24
-
   DataSubnet1CIDR:
     Description: Please enter the IP range (CIDR notation) for the Data subnet in the first Availability Zone
     Type: String
@@ -74,13 +69,6 @@ Resources:
           Description: !Sub
             - ${AWS::StackName}-Private-B-SubID ${SubId}
             - SubId: !Ref PrivateSubnet2
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !Ref PrivateSubnet3CIDR
-          Description: !Sub
-            - ${AWS::StackName}-Private-C-SubID ${SubId}
-            - SubId: !Ref PrivateSubnet3
   SqsEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -91,7 +79,6 @@ Resources:
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
-        - !Ref PrivateSubnet3
       SecurityGroupIds:
         - !Ref VpcESecurityGroup
   ApiGatewayEndpoint:
@@ -104,7 +91,6 @@ Resources:
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
-        - !Ref PrivateSubnet3
       SecurityGroupIds:
         - !Ref VpcESecurityGroup
   SnsEndpoint:
@@ -117,7 +103,6 @@ Resources:
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
-        - !Ref PrivateSubnet3
       SecurityGroupIds:
         - !Ref VpcESecurityGroup
   CloudwatchEndpoint:
@@ -130,7 +115,6 @@ Resources:
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
-        - !Ref PrivateSubnet3
       SecurityGroupIds:
         - !Ref VpcESecurityGroup
   DynamoDBVPCEndpoint:
@@ -140,7 +124,6 @@ Resources:
       RouteTableIds: 
         - !Ref PrivateRouteTable1
         - !Ref PrivateRouteTable2
-        - !Ref PrivateRouteTable3
       ServiceName: !Join
         - ""
         - - com.amazonaws.
@@ -212,17 +195,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName} Private Subnet (AZ2)
-
-  PrivateSubnet3:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      AvailabilityZone: !Select [2, !GetAZs ""]
-      CidrBlock: !Ref PrivateSubnet3CIDR
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub ${AWS::StackName} Private Subnet (AZ3)
 
   DataSubnet1:
     Type: AWS::EC2::Subnet
@@ -339,25 +311,10 @@ Resources:
         - Key: Name
           Value: !Sub ${AWS::StackName} Private Routes (AZ2)
 
-  PrivateRouteTable3:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub ${AWS::StackName} Private Routes (AZ3)
-
   DefaultPrivateRoute2:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PrivateRouteTable2
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway2
-
-  DefaultPrivateRoute3:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable3
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGateway2
 
@@ -366,12 +323,6 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable2
       SubnetId: !Ref PrivateSubnet2
-
-  PrivateSubnet3RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable3
-      SubnetId: !Ref PrivateSubnet3
 
   DataRouteTable1:
     Type: AWS::EC2::RouteTable
@@ -463,12 +414,6 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-Private-B-SubID"
 
-  PrivateSubnet3:
-    Description: Private Subnet 3
-    Value: !Ref PrivateSubnet3
-    Export:
-      Name: !Sub "${AWS::StackName}-Private-C-SubID"
-
   PrivateASubnetCidr:
     Description: Availability Zone A Private Subnet CIDR
     Value: !Ref PrivateSubnet1CIDR
@@ -480,12 +425,6 @@ Outputs:
     Value: !Ref PrivateSubnet2CIDR
     Export:
       Name: !Sub "${AWS::StackName}-Private-B-CIDR"
-
-  PrivateCSubnetCidr:
-    Description: Availability Zone C Private Subnet CIDR
-    Value: !Ref PrivateSubnet3CIDR
-    Export:
-      Name: !Sub "${AWS::StackName}-Private-C-CIDR"
 
   SecurityGroup:
     Description: SecurityGroup
