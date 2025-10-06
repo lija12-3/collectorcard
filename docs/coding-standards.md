@@ -1,6 +1,6 @@
 # Coding Standards
 
-This document outlines the coding standards and best practices for the Cardinal platform.
+This document outlines the coding standards and best practices for the platform.
 
 ## General Principles
 

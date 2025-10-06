@@ -1,6 +1,6 @@
 # Testing Guide
 
-This guide covers testing strategies and best practices for the Cardinal platform.
+This guide covers testing strategies and best practices for the platform.
 
 ## Testing Strategy
 
@@ -36,7 +36,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserService } from './user.service';
 import { User } from './entities/user.entity';
-import { EncryptionService } from '@cardinal/auth';
+import { EncryptionService } from '@collectorscard/auth';
 
 describe('UserService', () => {
   let service: UserService;
@@ -270,7 +270,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserService } from './user.service';
 import { User } from './entities/user.entity';
-import { EncryptionService } from '@cardinal/auth';
+import { EncryptionService } from '@collectorscard/auth';
 
 describe('UserService Integration', () => {
   let service: UserService;
@@ -444,7 +444,7 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
   moduleNameMapping: {
-    '^@cardinal/(.*)$': '<rootDir>/libs/$1/src',
+    '^@collectorscard/(.*)$': '<rootDir>/libs/$1/src',
     '^@shared/(.*)$': '<rootDir>/shared/$1',
   },
 };
