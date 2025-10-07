@@ -22,14 +22,14 @@ export enum Role {
   VIEWER = 'VIEWER',
 }
 
-export enum CardinalUserGroups {
+export enum UserGroups {
   ADMINISTRATORS = 'ADMINISTRATORS',
   MANAGERS = 'MANAGERS',
   USERS = 'USERS',
   VIEWERS = 'VIEWERS',
 }
 
-export interface ICardinalTokenBodyBase {
+export interface ITokenBodyBase {
   sub: string;
   tokenclaim: TokenType;
   exp?: number;
@@ -37,21 +37,21 @@ export interface ICardinalTokenBodyBase {
   [key: string]: any;
 }
 
-export interface ICardinalUser {
+export interface IUser {
   id: string;
   email: string;
   firstname: string;
   lastname: string;
   userroles: Role[];
-  groupclaim: CardinalUserGroups;
+  groupclaim: UserGroups;
   passwordhash?: string;
   [key: string]: any;
 }
 
 export interface IRequest extends Request {
-  token?: ICardinalTokenBodyBase;
+  token?: ITokenBodyBase;
   rawtoken?: string;
-  user?: ICardinalUser;
+  user?: IUser;
   useraudit?: {
     auditdate: number;
     useremail: string;
@@ -102,7 +102,7 @@ export interface IJwtPayload {
   sub: string;
   email: string;
   roles: Role[];
-  groups: CardinalUserGroups[];
+  groups: UserGroups[];
   tokenType: TokenType;
   iat?: number;
   exp?: number;

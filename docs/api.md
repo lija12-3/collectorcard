@@ -4,7 +4,7 @@
 
 ```
 Development: http://localhost:3000
-Production: https://api.cardinal.com
+Production: https://api.collectorscard.com
 ```
 
 ## Authentication

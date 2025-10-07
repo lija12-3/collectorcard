@@ -4,7 +4,7 @@ import 'winston-daily-rotate-file';
 import { LogLevel, LogContext, LogEntry, LoggerConfig } from './interfaces/logger.interface';
 
 @Injectable()
-export class CardinalLoggerService implements NestLoggerService {
+export class AppLoggerService implements NestLoggerService {
   private readonly logger: winston.Logger;
 
   constructor(private readonly config: LoggerConfig) {

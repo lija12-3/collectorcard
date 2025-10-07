@@ -318,10 +318,20 @@ Resources:
       SourceArn: !GetAtt UserPool.Arn
 
 Outputs:
-  RegionOut: { Value: !Ref Region, Export: { Name: !Sub ${ProjectName}:Region } }
-  UserPoolId: { Value: !Ref UserPool, Export: { Name: !Sub ${ProjectName}:UserPoolId } }
-  UserPoolClientId: { Value: !Ref UserPoolClient, Export: { Name: !Sub ${ProjectName}:UserPoolClientId } }
-  MagicLinksTableName: { Value: !Ref MagicLinksTable }
+  RegionOut:
+    Value: !Ref Region
+    Export:
+      Name: !Sub "${ProjectName}:Region"
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub "${ProjectName}:UserPoolId"
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub "${ProjectName}:UserPoolClientId"
+  MagicLinksTableName:
+    Value: !Ref MagicLinksTable
   IdentityPoolId:
     Condition: WithIdentityPool
     Value: !Ref IdentityPool
