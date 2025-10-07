@@ -4,8 +4,8 @@ import { mkdirSync } from 'fs';
 mkdirSync('dist/lambdas', { recursive: true });
 
 const entries = [
-  ['preAuthentication', 'apps/lambdas/src/preAuthentication.ts'],
-  ['preTokenGeneration', 'apps/lambdas/src/preTokenGeneration.ts'],
+  ['preAuthentication', 'apps/lambdas/src/pre-authentication.ts'],
+  ['preTokenGeneration', 'apps/lambdas/src/pre-token-generation.ts'],
   ['defineAuthChallenge', 'apps/lambdas/src/define-auth-challenge.ts'],
   ['createAuthChallenge', 'apps/lambdas/src/create-auth-challenge.ts'],
   ['verifyAuthChallenge', 'apps/lambdas/src/verify-auth-challenge.ts'],

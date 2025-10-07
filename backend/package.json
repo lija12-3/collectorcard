@@ -22,6 +22,7 @@
     "@types/node": "^20.0.0",
     "aws-serverless-express": "^3.4.0",
     "create-ts-index": "^1.14.0",
+    "esbuild": "^0.25.10",
     "rimraf": "^5.0.0",
     "ts-loader": "^9.4.0",
     "ts-node": "^10.0.0",
