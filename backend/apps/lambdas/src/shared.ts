@@ -3,7 +3,7 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import crypto from "crypto";
 
-const REGION = process.env.REGION || process.env.AWS_REGION || "us-east-1";
+const REGION = process.env.AWS_REGION || process.env.REGION || "us-east-1";
 const TABLE_NAME = process.env.TABLE_NAME;
 const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL;
 
