@@ -13,9 +13,9 @@ import { CACHE_KEY_METADATA, CACHE_TTL_METADATA } from '../decorators/cache.deco
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
   private readonly logger = new Logger(CacheInterceptor.name);
-  private cache = new Map<string, { data: any; expiry: number }>();
+  private readonly cache = new Map<string, { data: any; expiry: number }>();
 
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const cacheKey = this.reflector.get<string>(CACHE_KEY_METADATA, context.getHandler());

@@ -7,7 +7,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Observable, throwError, timer } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { CIRCUIT_BREAKER_METADATA, CircuitBreakerOptions } from '../decorators/circuit-breaker.decorator';
@@ -22,9 +22,9 @@ interface CircuitState {
 @Injectable()
 export class CircuitBreakerInterceptor implements NestInterceptor {
   private readonly logger = new Logger(CircuitBreakerInterceptor.name);
-  private circuits = new Map<string, CircuitState>();
+  private readonly circuits = new Map<string, CircuitState>();
 
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const options = this.reflector.get<CircuitBreakerOptions>(
