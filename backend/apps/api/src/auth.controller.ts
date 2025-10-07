@@ -3,7 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminGetUserCommand, AdminUpdateUserAttributesCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { Response } from 'express';
 
-const REGION = process.env.AWS_REGION || process.env.REGION || 'us-east-1';
+const REGION = process.env.AWS_REGION || 'us-east-1';
 const USER_POOL_ID = process.env.USER_POOL_ID;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // from Google console
 const APP_DEEPLINK = process.env.APP_DEEPLINK || 'myapp://magic';
