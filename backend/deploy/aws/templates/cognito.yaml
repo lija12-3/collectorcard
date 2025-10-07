@@ -33,7 +33,6 @@ Parameters:
     Type: String
     Default: myapp://magic
     Description: Base URL for magic links (deep link, e.g., myapp://magic). You can also use https://api.yourdomain.tld/auth/magic/consume
-
   CreateIdentityPool:
     Type: String
     AllowedValues: ['true','false']
