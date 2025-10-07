@@ -1,0 +1,405 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CodePipeline for automated Lambda deployment
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: collectors-card
+    Description: Project name used for naming resources
+  
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name (e.g., username/repo-name)
+  
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: Branch to track for deployments
+  
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub personal access token for repository access
+  
+  LambdaArtifactsBucket:
+    Type: String
+    Default: collectors-card-lambdas
+    Description: S3 bucket where Lambda artifacts are stored
+  
+  CognitoStackName:
+    Type: String
+    Default: collectors-card-cognito
+    Description: Name of the Cognito CloudFormation stack (for Lambda updates)
+
+Resources:
+  # S3 bucket for pipeline artifacts (different from Lambda artifacts)
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${ProjectName}-pipeline-artifacts
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldArtifacts
+            Status: Enabled
+            ExpirationInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # CodeBuild service role
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-codebuild-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub ${PipelineArtifactsBucket.Arn}/*
+                  - !Sub arn:aws:s3:::${LambdaArtifactsBucket}/*
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PipelineArtifactsBucket.Arn
+                  - !Sub arn:aws:s3:::${LambdaArtifactsBucket}
+
+  # CodeBuild project to build and package Lambdas
+  LambdaBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-lambda-build
+      Description: Build and package Lambda functions
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: LAMBDA_BUCKET
+            Value: !Ref LambdaArtifactsBucket
+          - Name: PROJECT_NAME
+            Value: !Ref ProjectName
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: backend/deploy/aws/buildspec.yml
+      TimeoutInMinutes: 15
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Sub /aws/codebuild/${ProjectName}-lambda-build
+
+  # CodePipeline service role
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-codepipeline-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
+                Resource:
+                  - !Sub ${PipelineArtifactsBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PipelineArtifactsBucket.Arn
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource:
+                  - !GetAtt LambdaBuildProject.Arn
+              - Effect: Allow
+                Action:
+                  - lambda:UpdateFunctionCode
+                  - lambda:GetFunction
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-*
+
+  # Main CodePipeline
+  LambdaPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub ${ProjectName}-lambda-pipeline
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      Stages:
+        # Source stage - GitHub
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: '1'
+              Configuration:
+                Owner: !Select [0, !Split ['/', !Ref GitHubRepo]]
+                Repo: !Select [1, !Split ['/', !Ref GitHubRepo]]
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+                PollForSourceChanges: false
+              OutputArtifacts:
+                - Name: SourceOutput
+        
+        # Build stage - Compile and package Lambdas
+        - Name: Build
+          Actions:
+            - Name: BuildLambdas
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref LambdaBuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+        
+        # Deploy stage - Update Lambda functions
+        - Name: Deploy
+          Actions:
+            - Name: UpdatePreAuthLambda
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: '1'
+              Configuration:
+                FunctionName: !Ref LambdaUpdaterFunction
+                UserParameters: !Sub |
+                  {
+                    "functionName": "${ProjectName}-pre-authentication",
+                    "s3Bucket": "${LambdaArtifactsBucket}",
+                    "s3Key": "lambdas/preAuthentication.zip"
+                  }
+              InputArtifacts:
+                - Name: BuildOutput
+            
+            - Name: UpdatePreTokenLambda
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: '1'
+              Configuration:
+                FunctionName: !Ref LambdaUpdaterFunction
+                UserParameters: !Sub |
+                  {
+                    "functionName": "${ProjectName}-pre-token-generation",
+                    "s3Bucket": "${LambdaArtifactsBucket}",
+                    "s3Key": "lambdas/preTokenGeneration.zip"
+                  }
+              InputArtifacts:
+                - Name: BuildOutput
+            
+            - Name: UpdateDefineChallengeLambda
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: '1'
+              Configuration:
+                FunctionName: !Ref LambdaUpdaterFunction
+                UserParameters: !Sub |
+                  {
+                    "functionName": "${ProjectName}-define-auth-challenge",
+                    "s3Bucket": "${LambdaArtifactsBucket}",
+                    "s3Key": "lambdas/defineAuthChallenge.zip"
+                  }
+              InputArtifacts:
+                - Name: BuildOutput
+            
+            - Name: UpdateCreateChallengeLambda
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: '1'
+              Configuration:
+                FunctionName: !Ref LambdaUpdaterFunction
+                UserParameters: !Sub |
+                  {
+                    "functionName": "${ProjectName}-create-auth-challenge",
+                    "s3Bucket": "${LambdaArtifactsBucket}",
+                    "s3Key": "lambdas/createAuthChallenge.zip"
+                  }
+              InputArtifacts:
+                - Name: BuildOutput
+            
+            - Name: UpdateVerifyChallengeLambda
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: '1'
+              Configuration:
+                FunctionName: !Ref LambdaUpdaterFunction
+                UserParameters: !Sub |
+                  {
+                    "functionName": "${ProjectName}-verify-auth-challenge",
+                    "s3Bucket": "${LambdaArtifactsBucket}",
+                    "s3Key": "lambdas/verifyAuthChallenge.zip"
+                  }
+              InputArtifacts:
+                - Name: BuildOutput
+
+  # GitHub webhook for automatic pipeline triggers
+  PipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Name: !Sub ${ProjectName}-github-webhook
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubToken
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: !Sub refs/heads/${GitHubBranch}
+      TargetPipeline: !Ref LambdaPipeline
+      TargetAction: SourceAction
+      TargetPipelineVersion: !GetAtt LambdaPipeline.Version
+      RegisterWithThirdParty: true
+
+  # Lambda function to update other Lambda functions
+  LambdaUpdaterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-lambda-updater-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: UpdateLambdaCode
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:UpdateFunctionCode
+                  - lambda:GetFunction
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub arn:aws:s3:::${LambdaArtifactsBucket}/*
+              - Effect: Allow
+                Action:
+                  - codepipeline:PutJobSuccessResult
+                  - codepipeline:PutJobFailureResult
+                Resource: '*'
+
+  LambdaUpdaterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-lambda-updater
+      Runtime: python3.11
+      Handler: index.handler
+      Role: !GetAtt LambdaUpdaterRole.Arn
+      Timeout: 60
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          
+          lambda_client = boto3.client('lambda')
+          codepipeline = boto3.client('codepipeline')
+          
+          def handler(event, context):
+              job_id = event['CodePipeline.job']['id']
+              
+              try:
+                  user_params = json.loads(event['CodePipeline.job']['data']['actionConfiguration']['configuration']['UserParameters'])
+                  
+                  function_name = user_params['functionName']
+                  s3_bucket = user_params['s3Bucket']
+                  s3_key = user_params['s3Key']
+                  
+                  print(f"Updating Lambda: {function_name}")
+                  
+                  response = lambda_client.update_function_code(
+                      FunctionName=function_name,
+                      S3Bucket=s3_bucket,
+                      S3Key=s3_key,
+                      Publish=True
+                  )
+                  
+                  print(f"Updated successfully: {response['FunctionArn']}")
+                  
+                  codepipeline.put_job_success_result(jobId=job_id)
+                  
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  codepipeline.put_job_failure_result(
+                      jobId=job_id,
+                      failureDetails={'message': str(e), 'type': 'JobFailed'}
+                  )
+                  raise
+
+Outputs:
+  PipelineName:
+    Description: CodePipeline name
+    Value: !Ref LambdaPipeline
+    Export:
+      Name: !Sub ${ProjectName}:PipelineName
+  
+  PipelineUrl:
+    Description: CodePipeline console URL
+    Value: !Sub https://console.aws.amazon.com/codesuite/codepipeline/pipelines/${LambdaPipeline}/view
+  
+  BuildProjectName:
+    Description: CodeBuild project name
+    Value: !Ref LambdaBuildProject
+    Export:
+      Name: !Sub ${ProjectName}:BuildProjectName
