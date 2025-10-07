@@ -1,10 +1,16 @@
 {
-  "name": "@cardinal/core",
+  "name": "@collectorscard/core",
   "version": "1.0.0",
-  "description": "Cardinal - Microservices platform built with NestJS and AWS Lambda",
+  "description": "Collectors card backend services",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "build:lambdas": "node scripts/build-lambdas.mjs",
+    "zip:lambdas": "mkdir -p dist/zips && cd dist/lambdas && for f in *.js; do zip -j ../zips/${f%.js}.zip $f; done",
+    "build:api": "tsc -p apps/api/tsconfig.json",
+    "start:api": "node apps/api/dist/main.js",
+
+
     "build": "npm run generate-index && npm run build:services",
     "build:services": "npm run build --workspaces --if-present",
     "dev": "npm run dev --workspaces --if-present",

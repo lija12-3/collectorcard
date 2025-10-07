@@ -17,19 +17,19 @@ export interface DatabaseConfig {
 }
 
 export class DatabaseConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
       type: this.configService.get<string>('DB_TYPE') as any || 'postgres',
-      host: this.configService.get<string>('DB_HOST') || 'localhost',
-      port: this.configService.get<number>('DB_PORT') || 5432,
-      username: this.configService.get<string>('DB_USERNAME') || 'postgres',
-      password: this.configService.get<string>('DB_PASSWORD') || 'password',
-      database: this.configService.get<string>('DB_DATABASE') || 'cardinal',
-      ssl: this.configService.get<boolean>('DB_SSL') || false,
-      synchronize: this.configService.get<boolean>('DB_SYNCHRONIZE') || false,
-      logging: this.configService.get<boolean>('DB_LOGGING') || false,
+      host: this.configService.get<string>('DB_HOST'),
+      port: this.configService.get<number>('DB_PORT'),
+      username: this.configService.get<string>('DB_USERNAME'),
+      password: this.configService.get<string>('DB_PASSWORD'),
+      database: this.configService.get<string>('DB_DATABASE'),
+      ssl: this.configService.get<boolean>('DB_SSL'),
+      synchronize: this.configService.get<boolean>('DB_SYNCHRONIZE'),
+      logging: this.configService.get<boolean>('DB_LOGGING'),
       entities: [__dirname + '/../entities/*.entity{.ts,.js}'],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       subscribers: [__dirname + '/../subscribers/*{.ts,.js}'],
@@ -38,10 +38,10 @@ export class DatabaseConfigService {
 
   createRedisOptions() {
     return {
-      host: this.configService.get<string>('REDIS_HOST') || 'localhost',
-      port: this.configService.get<number>('REDIS_PORT') || 6379,
+      host: this.configService.get<string>('REDIS_HOST'),
+      port: this.configService.get<number>('REDIS_PORT'),
       password: this.configService.get<string>('REDIS_PASSWORD'),
-      db: this.configService.get<number>('REDIS_DB') || 0,
+      db: this.configService.get<number>('REDIS_DB'),
     };
   }
 }

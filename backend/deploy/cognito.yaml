@@ -1,0 +1,328 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cognito UserPool with custom-auth magic link + pre-auth and pre-token hooks, DynamoDB, roles.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: app
+  Region:
+    Type: String
+    Default: us-east-1
+  SesFromEmail:
+    Type: String
+    Description: Verified SES sender email (must be verified in the SES region)
+  LambdaS3Bucket:
+    Type: String
+    Description: S3 bucket where Lambda bundles are uploaded
+  PreAuthS3Key:
+    Type: String
+    Default: lambdas/preAuthentication.zip
+  PreTokenGenS3Key:
+    Type: String
+    Default: lambdas/preTokenGeneration.zip
+  DefineChallengeS3Key:
+    Type: String
+    Default: lambdas/defineAuthChallenge.zip
+  CreateChallengeS3Key:
+    Type: String
+    Default: lambdas/createAuthChallenge.zip
+  VerifyChallengeS3Key:
+    Type: String
+    Default: lambdas/verifyAuthChallenge.zip
+  MagicLinkBaseURL:
+    Type: String
+    Default: myapp://magic
+    Description: Base URL for magic links (deep link, e.g., myapp://magic). You can also use https://api.yourdomain.tld/auth/magic/consume
+
+  CreateIdentityPool:
+    Type: String
+    AllowedValues: ['true','false']
+    Default: 'false'
+
+Conditions:
+  WithIdentityPool: !Equals [!Ref CreateIdentityPool, 'true']
+
+Resources:
+  MagicLinksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-magic-links
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: code
+          AttributeType: S
+      KeySchema:
+        - AttributeName: code
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  LambdasRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-cognito-triggers
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: [lambda.amazonaws.com] }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: MagicLinkAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt MagicLinksTable.Arn
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+
+  PreAuthenticationFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-pre-authentication
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 10
+      Role: !GetAtt LambdasRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref PreAuthS3Key
+
+  PreTokenGenerationFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-pre-token-generation
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 10
+      Role: !GetAtt LambdasRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref PreTokenGenS3Key
+
+  DefineAuthChallengeFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-define-auth-challenge
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 10
+      Role: !GetAtt LambdasRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref DefineChallengeS3Key
+
+  CreateAuthChallengeFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-create-auth-challenge
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 15
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref MagicLinksTable
+          SES_FROM_EMAIL: !Ref SesFromEmail
+          MAGIC_LINK_BASE_URL: !Ref MagicLinkBaseURL
+          REGION: !Ref Region
+      Role: !GetAtt LambdasRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref CreateChallengeS3Key
+
+  VerifyAuthChallengeFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-verify-auth-challenge
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 10
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref MagicLinksTable
+      Role: !GetAtt LambdasRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref VerifyChallengeS3Key
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${ProjectName}-user-pool
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      MfaConfiguration: "OFF"
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: tenantId
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: roles
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: isSocial
+          AttributeDataType: Boolean
+          Mutable: true
+          Required: false
+      LambdaConfig:
+        PreAuthentication: !GetAtt PreAuthenticationFn.Arn
+        DefineAuthChallenge: !GetAtt DefineAuthChallengeFn.Arn
+        CreateAuthChallenge: !GetAtt CreateAuthChallengeFn.Arn
+        VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeFn.Arn
+        PreTokenGeneration: !GetAtt PreTokenGenerationFn.Arn
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: "Your verification code"
+        EmailMessageByLink: "Click the link to verify your email: {##Click Here##}"
+        EmailMessage: "Your verification code is {####}. Enter this in the app to verify."
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${ProjectName}-app-client
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_CUSTOM_AUTH
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      SupportedIdentityProviders: [COGNITO]
+
+  # (Optional) Identity Pool + roles
+  IdentityPool:
+    Condition: WithIdentityPool
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub ${ProjectName}-identity-pool
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref UserPoolClient
+          ProviderName: !GetAtt UserPool.ProviderName
+
+  CognitoAuthRole:
+    Condition: WithIdentityPool
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-cognito-auth-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Federated: cognito-identity.amazonaws.com }
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonCognitoReadOnly
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+
+  CognitoUnauthRole:
+    Condition: WithIdentityPool
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-cognito-unauth-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Federated: cognito-identity.amazonaws.com }
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: unauthenticated
+
+  IdentityPoolRoles:
+    Condition: WithIdentityPool
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt CognitoAuthRole.Arn
+        unauthenticated: !GetAtt CognitoUnauthRole.Arn
+
+  # Allow Cognito to call the triggers
+  PermPreAuth:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PreAuthenticationFn.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PermPreToken:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PreTokenGenerationFn.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PermDefine:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt DefineAuthChallengeFn.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PermCreate:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CreateAuthChallengeFn.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PermVerify:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt VerifyAuthChallengeFn.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+Outputs:
+  RegionOut: { Value: !Ref Region, Export: { Name: !Sub ${ProjectName}:Region } }
+  UserPoolId: { Value: !Ref UserPool, Export: { Name: !Sub ${ProjectName}:UserPoolId } }
+  UserPoolClientId: { Value: !Ref UserPoolClient, Export: { Name: !Sub ${ProjectName}:UserPoolClientId } }
+  MagicLinksTableName: { Value: !Ref MagicLinksTable }
+  IdentityPoolId:
+    Condition: WithIdentityPool
+    Value: !Ref IdentityPool
