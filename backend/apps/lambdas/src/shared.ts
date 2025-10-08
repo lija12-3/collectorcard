@@ -3,7 +3,7 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import crypto from "crypto";
 
-const REGION = process.env.REGION || process.env.AWS_REGION || "us-east-1";
+const REGION = process.env.AWS_REGION || process.env.REGION || "us-east-1";
 const TABLE_NAME = process.env.TABLE_NAME;
 const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL;
 
@@ -19,15 +19,17 @@ export async function putCode(code: string, username: string, ttlSeconds: number
 
 export async function getAndDeleteCode(code: string) {
   const res = await ddbDoc.send(new GetCommand({ TableName: TABLE_NAME, Key: { code } }));
-  if (res.Item) {
+  const now = Math.floor(Date.now() / 1000);
+  if (res.Item && res.Item.expiresAt >= now) {
     await ddbDoc.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { code } }));
+    return res.Item as { code: string; username: string; expiresAt: number };
   }
-  return res.Item as { code: string; username: string; expiresAt: number } | undefined;
+  return undefined;
 }
 
 export function newCode(): string {
-  // short code for manual entry
-  return (Math.floor(100000 + Math.random() * 900000)).toString();
+  // short code for manual entry, cryptographically secure
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 export function newLinkToken(): string {
