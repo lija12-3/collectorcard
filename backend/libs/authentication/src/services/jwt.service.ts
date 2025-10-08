@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
-import { IJwtPayload, ICardinalUser, TokenType } from '../types/auth.types';
+import { IJwtPayload, IUser, TokenType } from '../types/auth.types';
 
 @Injectable()
 export class JwtService {
   constructor(private readonly jwtService: NestJwtService) {}
 
   async generateToken(
-    user: ICardinalUser,
+    user: IUser,
     tokenType: TokenType = TokenType.ACCESS,
     expiresIn?: string,
   ): Promise<string> {
@@ -24,7 +24,7 @@ export class JwtService {
     });
   }
 
-  async generateRefreshToken(user: ICardinalUser): Promise<string> {
+  async generateRefreshToken(user: IUser): Promise<string> {
     return this.generateToken(user, TokenType.REFRESH, '7d');
   }
 
@@ -36,7 +36,7 @@ export class JwtService {
     }
   }
 
-  async generateTokenPair(user: ICardinalUser): Promise<{
+  async generateTokenPair(user: IUser): Promise<{
     accessToken: string;
     refreshToken: string;
   }> {

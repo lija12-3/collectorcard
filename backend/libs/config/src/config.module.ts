@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
-import { CardinalConfigService } from './config.service';
+import { AppConfigService } from './config.service';
 
 @Global()
 @Module({
@@ -12,7 +12,7 @@ import { CardinalConfigService } from './config.service';
       cache: true,
     }),
   ],
-  providers: [CardinalConfigService],
-  exports: [CardinalConfigService],
+  providers: [AppConfigService],
+  exports: [AppConfigService],
 })
-export class CardinalConfigModule {}
+export class AppConfigModule {}

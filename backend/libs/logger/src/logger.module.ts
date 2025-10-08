@@ -1,5 +1,5 @@
 import { Module, Global, DynamicModule } from '@nestjs/common';
-import { CardinalLoggerService } from './cardinal-logger.service';
+import { AppLoggerService } from './app-logger.service';
 import { LoggerConfig } from './interfaces/logger.interface';
 
 @Global()
@@ -14,20 +14,20 @@ export class LoggerModule {
           useValue: config,
         },
         {
-          provide: CardinalLoggerService,
-          useFactory: (config: LoggerConfig) => new CardinalLoggerService(config),
+          provide: AppLoggerService,
+          useFactory: (config: LoggerConfig) => new AppLoggerService(config),
           inject: ['LoggerConfig'],
         },
       ],
-      exports: [CardinalLoggerService],
+      exports: [AppLoggerService],
     };
   }
 
   static forFeature() {
     return {
       module: LoggerModule,
-      providers: [CardinalLoggerService],
-      exports: [CardinalLoggerService],
+      providers: [AppLoggerService],
+      exports: [AppLoggerService],
     };
   }
 }

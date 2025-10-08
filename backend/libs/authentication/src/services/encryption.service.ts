@@ -15,20 +15,16 @@ export class EncryptionService {
   }
 
   encrypt(text: string): string {
-    try {
-      const iv = crypto.randomBytes(this.ivLength);
-      const cipher = crypto.createCipher(this.algorithm, this.encryptionKey);
-      cipher.setAAD(Buffer.from('cardinal-auth', 'utf8'));
+    const iv = crypto.randomBytes(this.ivLength);
+    const cipher = crypto.createCipher(this.algorithm, this.encryptionKey);
+    cipher.setAAD(Buffer.from('collectors-card-auth', 'utf8'));
 
-      let encrypted = cipher.update(text, 'utf8', 'hex');
-      encrypted += cipher.final('hex');
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
 
-      const tag = cipher.getAuthTag();
+    const tag = cipher.getAuthTag();
 
-      return iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
-    } catch (error) {
-      throw new Error('Encryption failed');
-    }
+    return iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
   }
 
   decrypt(encryptedText: string): string {
@@ -43,7 +39,7 @@ export class EncryptionService {
       const encrypted = parts[2];
 
       const decipher = crypto.createDecipher(this.algorithm, this.encryptionKey);
-      decipher.setAAD(Buffer.from('cardinal-auth', 'utf8'));
+      decipher.setAAD(Buffer.from('collectors-card-auth', 'utf8'));
       decipher.setAuthTag(tag);
 
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');

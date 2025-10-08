@@ -2,7 +2,7 @@
 export * from './logger.module';
 
 // Services
-export * from './cardinal-logger.service';
+export * from './app-logger.service';
 
 // Interfaces
 export * from './interfaces/logger.interface';
