@@ -182,10 +182,6 @@ Resources:
           AttributeDataType: String
           Mutable: true
           Required: false
-        - Name: isSocial
-          AttributeDataType: Boolean
-          Mutable: true
-          Required: false
       LambdaConfig:
         PreAuthentication: !GetAtt PreAuthenticationFn.Arn
         DefineAuthChallenge: !GetAtt DefineAuthChallengeFn.Arn
