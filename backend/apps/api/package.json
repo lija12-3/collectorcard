@@ -1,0 +1,26 @@
+{
+  "name": "@collectorscard/api",
+  "version": "1.0.0",
+  "description": "Collectors Card API Application",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main.js",
+    "migration:create": "mikro-orm migration:create",
+    "migration:up": "mikro-orm migration:up",
+    "migration:down": "mikro-orm migration:down",
+    "migration:pending": "mikro-orm migration:pending",
+    "migration:list": "mikro-orm migration:list",
+    "schema:create": "mikro-orm schema:create",
+    "schema:drop": "mikro-orm schema:drop",
+    "schema:update": "mikro-orm schema:update"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

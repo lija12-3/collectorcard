@@ -1,43 +1,60 @@
-import { Repository, FindOptionsWhere, FindManyOptions, FindOneOptions, DeepPartial } from 'typeorm';
+import { EntityRepository, EntityManager, FilterQuery, FindOptions, RequiredEntityData } from '@mikro-orm/core';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export abstract class BaseRepository<T> {
-  constructor(protected readonly repository: Repository<T>) {}
+export abstract class BaseRepository<T extends object> {
+  constructor(
+    protected readonly repository: EntityRepository<T>,
+    protected readonly em: EntityManager,
+  ) {}
 
-  async find(options?: FindManyOptions<T>): Promise<T[]> {
-    return this.repository.find(options);
+  async find(where?: FilterQuery<T>, options?: any): Promise<T[]> {
+    return this.repository.find(where, options);
   }
 
-  async findOne(options: FindOneOptions<T>): Promise<T | null> {
-    return this.repository.findOne(options);
+  async findOne(where: FilterQuery<T>, options?: any): Promise<T | null> {
+    return this.repository.findOne(where, options);
   }
 
   async findById(id: string | number): Promise<T | null> {
-    return this.repository.findOne({ where: { id } as unknown as FindOptionsWhere<T> });
+    return this.repository.findOne({ id } as FilterQuery<T>);
   }
 
-  async create(data: Partial<T>): Promise<T> {
-    const entity = this.repository.create(data as unknown as DeepPartial<T>);
-    return this.repository.save(entity as unknown as DeepPartial<T>);
+  async create(data: RequiredEntityData<T>): Promise<T> {
+    const entity = this.repository.create(data);
+    await this.em.persistAndFlush(entity);
+    return entity;
   }
 
   async update(id: string | number, data: Partial<T>): Promise<T | null> {
-    await this.repository.update(id, data as any);
-    return this.findById(id);
+    const entity = await this.findById(id);
+    if (!entity) {
+      return null;
+    }
+    Object.assign(entity, data);
+    await this.em.persistAndFlush(entity);
+    return entity;
   }
 
   async delete(id: string | number): Promise<boolean> {
-    const result = await this.repository.delete(id);
-    return result.affected > 0;
+    const entity = await this.findById(id);
+    if (!entity) {
+      return false;
+    }
+    await this.em.removeAndFlush(entity);
+    return true;
   }
 
-  async count(options?: FindManyOptions<T>): Promise<number> {
-    return this.repository.count(options);
+  async count(where?: FilterQuery<T>): Promise<number> {
+    return this.repository.count(where);
   }
 
-  async exists(options: FindOneOptions<T>): Promise<boolean> {
-    const count = await this.repository.count(options);
+  async exists(where: FilterQuery<T>): Promise<boolean> {
+    const count = await this.repository.count(where);
     return count > 0;
+  }
+
+  async findAndCount(where?: FilterQuery<T>, options?: any): Promise<[T[], number]> {
+    return this.repository.findAndCount(where, options);
   }
 }
