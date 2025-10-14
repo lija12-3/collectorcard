@@ -13,7 +13,12 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, UpdateUserDto, UserQueryDto, SensitiveUserDto, DecryptUserDto } from './dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserQueryDto,
+  SensitiveUserDto,
+} from './dto';
 import { AccessTokenGuard } from '@libs/authentication';
 import { Public, Roles, Cache, Encrypt, Decrypt } from '../../decorators';
 
@@ -116,11 +121,12 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   async createWithSensitiveData(
     @Body() sensitiveUserDto: SensitiveUserDto,
-    @Encrypt(['ssn', 'creditCardNumber', 'bankAccountNumber']) encryptedData?: any,
+    @Encrypt(['ssn', 'creditCardNumber', 'bankAccountNumber'])
+    encryptedData?: any,
   ) {
     // The @Encrypt decorator will automatically encrypt specified fields
     // from the request body and provide them in the encryptedData parameter
-    
+
     // Create the user with basic data first
     const basicUserData = {
       email: sensitiveUserDto.email,
@@ -132,14 +138,20 @@ export class UserController {
     };
 
     const user = await this.userService.create(basicUserData);
-    
+
     return {
       message: 'User created with encrypted sensitive data',
       user,
       encryptedFields: {
-        ssn: sensitiveUserDto.ssn ? '***-***-' + sensitiveUserDto.ssn.slice(-4) : null,
-        creditCard: sensitiveUserDto.creditCardNumber ? '****-****-****-' + sensitiveUserDto.creditCardNumber.slice(-4) : null,
-        bankAccount: sensitiveUserDto.bankAccountNumber ? '****' + sensitiveUserDto.bankAccountNumber.slice(-4) : null,
+        ssn: sensitiveUserDto.ssn
+          ? '***-***-' + sensitiveUserDto.ssn.slice(-4)
+          : null,
+        creditCard: sensitiveUserDto.creditCardNumber
+          ? '****-****-****-' + sensitiveUserDto.creditCardNumber.slice(-4)
+          : null,
+        bankAccount: sensitiveUserDto.bankAccountNumber
+          ? '****' + sensitiveUserDto.bankAccountNumber.slice(-4)
+          : null,
       },
       encryptedData: encryptedData, // This contains the encrypted versions
       note: 'Sensitive data has been encrypted and stored securely',
@@ -150,7 +162,8 @@ export class UserController {
   @Get('sensitive-data/:id')
   async getUserWithSensitiveData(
     @Param('id', ParseUUIDPipe) id: string,
-    @Decrypt(['ssn', 'creditCardNumber', 'bankAccountNumber']) decryptedData?: any,
+    @Decrypt(['ssn', 'creditCardNumber', 'bankAccountNumber'])
+    decryptedData?: any,
   ) {
     const user = await this.userService.findById(id);
     if (!user) {
@@ -183,14 +196,16 @@ export class UserController {
   async updateSensitiveData(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() sensitiveData: SensitiveUserDto,
-    @Encrypt(['ssn', 'creditCardNumber', 'bankAccountNumber']) encryptedData?: any,
-    @Decrypt(['ssn', 'creditCardNumber', 'bankAccountNumber']) decryptedData?: any,
+    @Encrypt(['ssn', 'creditCardNumber', 'bankAccountNumber'])
+    encryptedData?: any,
+    @Decrypt(['ssn', 'creditCardNumber', 'bankAccountNumber'])
+    decryptedData?: any,
   ) {
     // This endpoint demonstrates both encryption and decryption
     // 1. Decrypt incoming sensitive data (if it was encrypted)
     // 2. Process the data
     // 3. Encrypt sensitive data before storing
-    
+
     const user = await this.userService.findById(id);
     if (!user) {
       throw new Error('User not found');
@@ -211,8 +226,12 @@ export class UserController {
     // Simulate the encryption/decryption process
     const processedSensitiveData = {
       ssn: sensitiveData.ssn ? '***-***-' + sensitiveData.ssn.slice(-4) : null,
-      creditCard: sensitiveData.creditCardNumber ? '****-****-****-' + sensitiveData.creditCardNumber.slice(-4) : null,
-      bankAccount: sensitiveData.bankAccountNumber ? '****' + sensitiveData.bankAccountNumber.slice(-4) : null,
+      creditCard: sensitiveData.creditCardNumber
+        ? '****-****-****-' + sensitiveData.creditCardNumber.slice(-4)
+        : null,
+      bankAccount: sensitiveData.bankAccountNumber
+        ? '****' + sensitiveData.bankAccountNumber.slice(-4)
+        : null,
     };
 
     return {
@@ -223,8 +242,12 @@ export class UserController {
       decryptedData: decryptedData, // Contains decrypted versions
       encryptionStatus: {
         ssn: sensitiveData.ssn ? 'encrypted' : 'not provided',
-        creditCard: sensitiveData.creditCardNumber ? 'encrypted' : 'not provided',
-        bankAccount: sensitiveData.bankAccountNumber ? 'encrypted' : 'not provided',
+        creditCard: sensitiveData.creditCardNumber
+          ? 'encrypted'
+          : 'not provided',
+        bankAccount: sensitiveData.bankAccountNumber
+          ? 'encrypted'
+          : 'not provided',
       },
     };
   }
@@ -244,12 +267,16 @@ export class UserController {
       // In real implementation, these would be automatically encrypted by @Encrypt decorator
       encryptedFields: {
         ssn: data.ssn ? 'encrypted_ssn_' + data.ssn.slice(-4) : null,
-        creditCard: data.creditCard ? 'encrypted_card_' + data.creditCard.slice(-4) : null,
+        creditCard: data.creditCard
+          ? 'encrypted_card_' + data.creditCard.slice(-4)
+          : null,
       },
       usage: {
-        '@Encrypt()': 'Applied to DTO fields to automatically encrypt sensitive data',
-        '@Decrypt()': 'Applied to DTO fields to automatically decrypt data when retrieving',
-        'Security': 'Uses AES-256-GCM encryption with unique IVs for each field',
+        '@Encrypt()':
+          'Applied to DTO fields to automatically encrypt sensitive data',
+        '@Decrypt()':
+          'Applied to DTO fields to automatically decrypt data when retrieving',
+        Security: 'Uses AES-256-GCM encryption with unique IVs for each field',
       },
     };
 
