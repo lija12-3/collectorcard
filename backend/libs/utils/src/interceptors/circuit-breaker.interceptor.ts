@@ -70,7 +70,7 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
 
   private getOrCreateCircuit(
     methodName: string,
-    options: CircuitBreakerOptions,
+    _options: CircuitBreakerOptions,
   ): CircuitState {
     if (!this.circuits.has(methodName)) {
       this.circuits.set(methodName, {

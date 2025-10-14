@@ -115,9 +115,9 @@ export class SESService {
   }
 
   async sendTemplatedEmail(
-    templateName: string,
-    templateData: Record<string, any>,
-    message: Omit<EmailMessage, 'subject' | 'text' | 'html'>,
+    _templateName: string,
+    _templateData: Record<string, any>,
+    _message: Omit<EmailMessage, 'subject' | 'text' | 'html'>,
   ): Promise<string> {
     // This would require SES template functionality
     // For now, we'll throw an error indicating it needs to be implemented

@@ -148,7 +148,7 @@ export class KeystoreService {
 
   async getAndDecryptSecret(
     secretName: string,
-    keyId: string,
+    _keyId: string,
   ): Promise<string> {
     try {
       const encryptedValue = await this.getSecret(secretName);

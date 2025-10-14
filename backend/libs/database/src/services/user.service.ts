@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import {
-  EntityRepository,
-  EntityManager,
-  FilterQuery,
-  FindOptions,
-} from '@mikro-orm/core';
+import { EntityRepository, EntityManager, FilterQuery } from '@mikro-orm/core';
 import { User } from '../entities/user.entity';
 import { BaseRepository } from '../repositories/base.repository';
 

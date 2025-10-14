@@ -34,7 +34,6 @@ export class EncryptionService {
         throw new Error('Invalid encrypted text format');
       }
 
-      const iv = Buffer.from(parts[0], 'hex');
       const tag = Buffer.from(parts[1], 'hex');
       const encrypted = parts[2];
 

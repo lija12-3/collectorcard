@@ -1,6 +1,5 @@
 import { MikroOrmModuleOptions } from '@mikro-orm/nestjs';
 import { ConfigService } from '@nestjs/config';
-import { Options } from '@mikro-orm/core';
 
 export interface DatabaseConfig {
   type: 'mysql' | 'postgresql' | 'sqlite' | 'mongo';

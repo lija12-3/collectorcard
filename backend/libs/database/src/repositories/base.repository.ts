@@ -2,7 +2,6 @@ import {
   EntityRepository,
   EntityManager,
   FilterQuery,
-  FindOptions,
   RequiredEntityData,
 } from '@mikro-orm/core';
 import { Injectable } from '@nestjs/common';
