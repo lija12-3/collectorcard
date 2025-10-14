@@ -9,11 +9,13 @@ The `@Encrypt` and `@Decrypt` decorators are parameter decorators that automatic
 ## Available Endpoints
 
 ### 1. Create User with Sensitive Data
+
 **POST** `/api/v1/users/sensitive-data`
 
 Creates a user with encrypted sensitive information.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -24,41 +26,53 @@ Creates a user with encrypted sensitive information.
   "zipcode": "12345",
   "ssn": "123-45-6789",
   "creditCardNumber": "4111-1111-1111-1111",
-  "bankAccountNumber": "1234567890",
+  "bankAccountNumber": "1234567890"
 }
 ```
 
 **Response:**
+
 ```json
 {
   "message": "User created with encrypted sensitive data",
-  "user": { /* user object */ },
+  "user": {
+    /* user object */
+  },
   "encryptedFields": {
     "ssn": "***-***-6789",
     "creditCard": "****-****-****-1111",
-    "bankAccount": "****7890",
+    "bankAccount": "****7890"
   },
-  "encryptedData": { /* encrypted versions */ },
+  "encryptedData": {
+    /* encrypted versions */
+  },
   "note": "Sensitive data has been encrypted and stored securely"
 }
 ```
 
 ### 2. Get User with Decrypted Sensitive Data
+
 **GET** `/api/v1/users/sensitive-data/:id`
 
 Retrieves a user with decrypted sensitive information.
 
 **Response:**
+
 ```json
 {
   "message": "User retrieved with decrypted sensitive data",
-  "user": { /* user object with decrypted sensitive data */ },
-  "decryptedData": { /* decrypted versions */ },
+  "user": {
+    /* user object with decrypted sensitive data */
+  },
+  "decryptedData": {
+    /* decrypted versions */
+  },
   "warning": "Sensitive data is only decrypted for authorized access"
 }
 ```
 
 ### 3. Update User with Encryption/Decryption
+
 **PUT** `/api/v1/users/sensitive-data/:id`
 
 Updates a user with both encryption and decryption handling.
@@ -66,27 +80,38 @@ Updates a user with both encryption and decryption handling.
 **Request Body:** Same as create endpoint
 
 **Response:**
+
 ```json
 {
   "message": "Sensitive data updated with encryption/decryption",
-  "user": { /* updated user object */ },
-  "processedSensitiveData": { /* masked sensitive data */ },
-  "encryptedData": { /* encrypted versions */ },
-  "decryptedData": { /* decrypted versions */ },
+  "user": {
+    /* updated user object */
+  },
+  "processedSensitiveData": {
+    /* masked sensitive data */
+  },
+  "encryptedData": {
+    /* encrypted versions */
+  },
+  "decryptedData": {
+    /* decrypted versions */
+  },
   "encryptionStatus": {
     "ssn": "encrypted",
     "creditCard": "encrypted",
-    "bankAccount": "encrypted",
+    "bankAccount": "encrypted"
   }
 }
 ```
 
 ### 4. Field-Level Encryption Demo
+
 **POST** `/api/v1/users/field-encryption-demo`
 
 Demonstrates field-level encryption concepts.
 
 **Request Body:**
+
 ```json
 {
   "email": "demo@example.com",
@@ -96,6 +121,7 @@ Demonstrates field-level encryption concepts.
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Field-level encryption demonstration",
@@ -119,12 +145,14 @@ Demonstrates field-level encryption concepts.
 ## How the Decorators Work
 
 ### @Encrypt Decorator
+
 - **Type:** Parameter Decorator
 - **Usage:** `@Encrypt(['field1', 'field2']) encryptedData?: any`
 - **Purpose:** Automatically encrypts specified fields from the request body
 - **Returns:** Object containing encrypted versions of the specified fields
 
 ### @Decrypt Decorator
+
 - **Type:** Parameter Decorator
 - **Usage:** `@Decrypt(['field1', 'field2']) decryptedData?: any`
 - **Purpose:** Automatically decrypts specified fields from the database
@@ -141,13 +169,17 @@ Demonstrates field-level encryption concepts.
 ## DTOs
 
 ### SensitiveUserDto
+
 Contains fields for sensitive user data that should be encrypted:
+
 - `ssn?: string`
 - `creditCardNumber?: string`
 - `bankAccountNumber?: string`
 
 ### DecryptUserDto
+
 Contains fields for retrieving decrypted sensitive data:
+
 - Same fields as SensitiveUserDto but designed for decryption
 
 ## Best Practices
@@ -170,6 +202,7 @@ ENCRYPTION_KEY=your-32-character-encryption-key-here
 ## Error Handling
 
 The decorators will throw errors if:
+
 - Encryption key is not provided
 - Invalid encrypted data format
 - Decryption fails

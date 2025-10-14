@@ -1,7 +1,5 @@
 {
-  "namespaces": [
-    "public"
-  ],
+  "namespaces": ["public"],
   "name": "public",
   "tables": [
     {
@@ -190,9 +188,7 @@
       "indexes": [
         {
           "keyName": "users_email_index",
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": false,
           "primary": false,
@@ -200,9 +196,7 @@
         },
         {
           "keyName": "users_email_unique",
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": true,
           "primary": false,
@@ -210,9 +204,7 @@
         },
         {
           "keyName": "users_pkey",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,

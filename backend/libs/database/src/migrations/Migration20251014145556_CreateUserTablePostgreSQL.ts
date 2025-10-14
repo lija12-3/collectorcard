@@ -1,7 +1,6 @@
 import { Migration } from '@mikro-orm/migrations';
 
 export class Migration20251014145556_CreateUserTablePostgreSQL extends Migration {
-
   override async up(): Promise<void> {
     this.addSql(`
       CREATE TABLE "users" (
@@ -27,7 +26,7 @@ export class Migration20251014145556_CreateUserTablePostgreSQL extends Migration
         CONSTRAINT "users_email_unique" UNIQUE ("email")
       );
     `);
-    
+
     this.addSql(`
       CREATE INDEX "users_email_index" ON "users" ("email");
     `);
@@ -36,5 +35,4 @@ export class Migration20251014145556_CreateUserTablePostgreSQL extends Migration
   override async down(): Promise<void> {
     this.addSql(`DROP TABLE IF EXISTS "users";`);
   }
-
 }

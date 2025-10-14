@@ -26,7 +26,7 @@ export class Migration20251013114814_CreateUserTable extends Migration {
         CONSTRAINT "users_email_unique" UNIQUE ("email")
       );
     `);
-    
+
     this.addSql(`
       CREATE INDEX "users_email_index" ON "users" ("email");
     `);
