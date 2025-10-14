@@ -97,13 +97,13 @@ Resources:
           FromPort: !Ref GRPCPort
           ToPort: !Ref GRPCPort
           CidrIp: !ImportValue
-            Fn::Sub: ${NetworkStackName}-PrivateSubnet1Cidr
+            Fn::Sub: ${NetworkStackName}-Private-A-CIDR
           Description: !Sub Inbound from Private Subnet1 to ${EnvironmentName} GRPC Port
         - IpProtocol: tcp
           FromPort: !Ref GRPCPort
           ToPort: !Ref GRPCPort
           CidrIp: !ImportValue
-            Fn::Sub: ${NetworkStackName}-PrivateSubnet2Cidr
+            Fn::Sub: ${NetworkStackName}-Private-B-CIDR
           Description: !Sub Inbound from Private Subnet2 to ${EnvironmentName} GRPC Port
   EKSCluster:
     Type: AWS::EKS::Cluster
@@ -115,9 +115,9 @@ Resources:
           - !Ref ControlPlaneSecurityGroup
         SubnetIds:
           - !ImportValue
-            Fn::Sub: ${NetworkStackName}-PrivateSubnet1Id
+            Fn::Sub: ${NetworkStackName}-Private-A-SubID
           - !ImportValue
-            Fn::Sub: ${NetworkStackName}-PrivateSubnet2Id
+            Fn::Sub: ${NetworkStackName}-Private-B-SubID
       Version: '1.31'
       Logging:
         ClusterLogging:

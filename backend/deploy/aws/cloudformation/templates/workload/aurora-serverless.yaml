@@ -1,0 +1,217 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Aurora PostgreSQL Serverless v2 cluster (single-region) for application workloads.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, production]
+    Description: Environment name used for tagging (dev/production).
+  ClusterIdentifier:
+    Type: String
+    Default: collectors-card-aurora
+    Description: Unique identifier for the DB cluster (lowercase, hyphen allowed).
+  DatabaseName:
+    Type: String
+    Default: appdb
+    Description: Initial database to create inside the cluster.
+  MasterUsername:
+    Type: String
+    Default: dbadmin
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters or underscore.
+    Description: Master username for the cluster.
+  EngineVersion:
+    Type: String
+    Default: '15.3'
+    Description: Aurora PostgreSQL engine version that supports Serverless v2.
+  NetworkStackName:
+    Type: String
+    Description: Name of the network CloudFormation stack that exports VPC/subnet values.
+  AllowedIngressCidr:
+    Type: String
+    Default: 10.192.0.0/16
+    Description: CIDR range allowed to connect to the cluster (adjust to your application subnets).
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 7
+    MinValue: 1
+    MaxValue: 35
+    Description: Number of days to retain automated backups.
+  DeletionProtection:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: Enable deletion protection on the cluster.
+  MinCapacity:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 128
+    Description: Minimum ACU capacity for Serverless v2 (0.5 increments).
+  MaxCapacity:
+    Type: Number
+    Default: 4
+    MinValue: 0.5
+    MaxValue: 128
+    Description: Maximum ACU capacity for Serverless v2 (must be >= MinCapacity).
+  EnablePerformanceInsights:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: Toggle Performance Insights for the DB instance.
+  PubliclyAccessible:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+    Description: Whether the instance is publicly accessible. Keep false for private deployments.
+  EnableDataApi:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+    Description: Enable the Data API for Aurora PostgreSQL.
+  DatabaseKmsKeyId:
+    Type: String
+    Default: ''
+    Description: Optional KMS key ARN or alias for encrypting the Aurora cluster (leave blank to use aws/rds).
+  SecretKmsKeyId:
+    Type: String
+    Default: ''
+    Description: Optional KMS key ARN or alias for encrypting the generated Secrets Manager secret (leave blank to use aws/secretsmanager).
+
+Conditions:
+  UsePerformanceInsights: !Equals [!Ref EnablePerformanceInsights, 'true']
+  MakePublic: !Equals [!Ref PubliclyAccessible, 'true']
+  ProtectCluster: !Equals [!Ref DeletionProtection, 'true']
+  UseCustomDbKmsKey: !Not [!Equals [!Ref DatabaseKmsKeyId, '']]
+  UseCustomSecretKmsKey: !Not [!Equals [!Ref SecretKmsKeyId, '']]
+  EnableDataApiCondition: !Equals [!Ref EnableDataApi, 'true']
+
+Resources:
+  MasterUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub ${ClusterIdentifier}-master-credentials
+      Description: !Sub Master credentials for ${EnvironmentName} Aurora cluster ${ClusterIdentifier}
+      KmsKeyId: !If [UseCustomSecretKmsKey, !Ref SecretKmsKeyId, !Ref AWS::NoValue]
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${MasterUsername}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\\'
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ClusterIdentifier}-master-credentials
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  AuroraSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub Allow PostgreSQL access to ${EnvironmentName} Aurora cluster
+      VpcId: !ImportValue
+        Fn::Sub: ${NetworkStackName}-VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref AllowedIngressCidr
+          Description: Allow PostgreSQL from application CIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ClusterIdentifier}-aurora-sg
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  AuroraSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub Subnet group for ${EnvironmentName} Aurora cluster
+      SubnetIds:
+        - !ImportValue
+          Fn::Sub: ${NetworkStackName}-PrivateSubnet1Id
+        - !ImportValue
+          Fn::Sub: ${NetworkStackName}-PrivateSubnet2Id
+      DBSubnetGroupName: !Sub ${EnvironmentName}-${ClusterIdentifier}-subnetgrp
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ClusterIdentifier}-subnetgrp
+
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: !Ref EngineVersion
+      DBClusterIdentifier: !Ref ClusterIdentifier
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${MasterUserSecret}:SecretString:password}}'
+      EngineMode: provisioned
+      DBSubnetGroupName: !Ref AuroraSubnetGroup
+      VpcSecurityGroupIds:
+        - !GetAtt AuroraSecurityGroup.GroupId
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      PreferredBackupWindow: '05:00-06:00'
+      PreferredMaintenanceWindow: 'sun:06:00-sun:07:00'
+      StorageEncrypted: true
+      KmsKeyId: !If [UseCustomDbKmsKey, !Ref DatabaseKmsKeyId, !Ref AWS::NoValue]
+      DeletionProtection: !If [ProtectCluster, true, false]
+      CopyTagsToSnapshot: true
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref MinCapacity
+        MaxCapacity: !Ref MaxCapacity
+      EnableCloudwatchLogsExports:
+        - postgresql
+      EnableHttpEndpoint: !If [EnableDataApiCondition, true, false]
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ClusterIdentifier}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  AuroraInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref AuroraCluster
+      DBInstanceIdentifier: !Sub ${ClusterIdentifier}-instance-1
+      DBInstanceClass: db.serverless
+      Engine: aurora-postgresql
+      PubliclyAccessible: !If [MakePublic, true, false]
+      EnablePerformanceInsights: !If [UsePerformanceInsights, true, false]
+      PerformanceInsightsRetentionPeriod: !If [UsePerformanceInsights, 7, !Ref 'AWS::NoValue']
+      AutoMinorVersionUpgrade: true
+      CACertificateIdentifier: rds-ca-rsa2048-g1
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ClusterIdentifier}-instance
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  ClusterEndpoint:
+    Description: Writer endpoint for the Aurora cluster.
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+    Export:
+      Name: !Sub ${ClusterIdentifier}:AuroraClusterEndpoint
+
+  ReaderEndpoint:
+    Description: Reader endpoint for the Aurora cluster.
+    Value: !GetAtt AuroraCluster.ReadEndpoint.Address
+    Export:
+      Name: !Sub ${ClusterIdentifier}:AuroraReaderEndpoint
+
+  SecurityGroupId:
+    Description: Security group ID applied to Aurora.
+    Value: !GetAtt AuroraSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${ClusterIdentifier}:AuroraSecurityGroupId
+
+  SubnetGroupName:
+    Description: DB subnet group name.
+    Value: !Ref AuroraSubnetGroup
+  MasterSecretArn:
+    Description: Secrets Manager ARN storing the generated master credentials.
+    Value: !Ref MasterUserSecret
+    Export:
+      Name: !Sub ${ClusterIdentifier}:AuroraMasterSecretArn
