@@ -11,7 +11,7 @@ const config = defineConfig({
   dbName: configService.get<string>('DB_DATABASE', 'appdb'),
   // SSL configuration for PostgreSQL
   ...(configService.get<boolean>('DB_SSL', false) && {
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   }),
   debug: configService.get<boolean>('DB_LOGGING', false),
   entities: ['dist/libs/database/src/entities/*.entity.js'],
