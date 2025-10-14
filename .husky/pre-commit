@@ -4,11 +4,43 @@
 # Change to backend directory and run checks
 cd backend
 
-# Run lint-staged for staged files
-npx lint-staged
-
-# Run type checking
-npm run type-check
-
-# Run build check
-npm run build:api
+# Detect platform and run appropriate script
+if [ "$(uname)" = "Darwin" ] || [ "$(uname)" = "Linux" ]; then
+    # Unix-like system (macOS, Linux)
+    if [ -f "scripts/pre-commit.sh" ]; then
+        bash scripts/pre-commit.sh
+    else
+        # Fallback to inline commands
+        echo "🔍 Running pre-commit checks (matching GitHub Actions)..."
+        echo "📝 Running ESLint..."
+        npx lint-staged
+        echo "💅 Running Prettier check..."
+        npm run format:check
+        echo "🔧 Running TypeScript type check..."
+        npm run type-check
+        echo "🏗️ Building API application..."
+        npm run build:api
+        echo "🔒 Running security audit..."
+        npm audit --audit-level=moderate
+        echo "✅ All pre-commit checks passed!"
+    fi
+else
+    # Windows or other system
+    if [ -f "scripts/pre-commit.ps1" ]; then
+        powershell -ExecutionPolicy Bypass -File scripts/pre-commit.ps1
+    else
+        # Fallback to inline commands
+        echo "🔍 Running pre-commit checks (matching GitHub Actions)..."
+        echo "📝 Running ESLint..."
+        npx lint-staged
+        echo "💅 Running Prettier check..."
+        npm run format:check
+        echo "🔧 Running TypeScript type check..."
+        npm run type-check
+        echo "🏗️ Building API application..."
+        npm run build:api
+        echo "🔒 Running security audit..."
+        npm audit --audit-level=moderate
+        echo "✅ All pre-commit checks passed!"
+    fi
+fi

@@ -75,22 +75,27 @@ async function runPreCommitChecks() {
     }
   }
 
-  // Security audit with user confirmation
+  // Security audit with lenient handling for development dependencies
   log.status('Running security audit...');
   try {
-    execSync('npm audit --audit-level=moderate', { stdio: 'inherit' });
-    log.success('Security audit passed');
+    execSync('npm audit --audit-level=high', { stdio: 'inherit' });
+    log.success('Security audit passed (no high/critical vulnerabilities)');
   } catch (error) {
-    log.warning('Security audit found moderate or higher vulnerabilities.');
+    log.warning('Security audit found high or critical vulnerabilities.');
     log.warning('Please review and fix security issues before committing.');
     console.log('');
     console.log('To see details: npm audit');
     console.log('To fix automatically: npm audit fix');
     console.log('');
 
-    // For now, we'll continue on security audit failures
-    // In a real scenario, you might want to prompt the user
-    log.warning('Continuing despite security issues...');
+    // Check if there are only moderate/low vulnerabilities
+    try {
+      execSync('npm audit --audit-level=moderate', { stdio: 'pipe' });
+      log.warning('Only moderate/low vulnerabilities found - continuing...');
+    } catch (moderateError) {
+      log.error('High or critical vulnerabilities found - blocking commit');
+      process.exit(1);
+    }
   }
 
   console.log('');
