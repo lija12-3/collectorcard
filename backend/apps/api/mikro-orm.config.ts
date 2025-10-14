@@ -9,16 +9,16 @@ const config = defineConfig({
   user: configService.get<string>('DB_USERNAME', 'postgres'),
   password: configService.get<string>('DB_PASSWORD', ''),
   dbName: configService.get<string>('DB_DATABASE', 'appdb'),
-  ssl: configService.get<boolean>('DB_SSL', false)
-    ? { rejectUnauthorized: false }
-    : false,
+  // SSL configuration for PostgreSQL
+  ...(configService.get<boolean>('DB_SSL', false) && {
+    ssl: { rejectUnauthorized: false }
+  }),
   debug: configService.get<boolean>('DB_LOGGING', false),
   entities: ['dist/libs/database/src/entities/*.entity.js'],
   entitiesTs: ['libs/database/src/entities/*.entity.ts'],
   migrations: {
     path: 'dist/libs/database/src/migrations',
     pathTs: 'libs/database/src/migrations',
-    pattern: /^[\w-]+\d+\.(ts|js)$/,
   },
   allowGlobalContext: true,
   // Read replica configuration
