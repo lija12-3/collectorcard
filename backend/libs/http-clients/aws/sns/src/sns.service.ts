@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SNSClient, PublishCommand, CreateTopicCommand, SubscribeCommand, UnsubscribeCommand } from '@aws-sdk/client-sns';
+import {
+  SNSClient,
+  PublishCommand,
+  CreateTopicCommand,
+  SubscribeCommand,
+  UnsubscribeCommand,
+} from '@aws-sdk/client-sns';
 
 export interface SNSMessage {
   subject?: string;
@@ -21,10 +27,7 @@ export class SNSService {
     this.snsClient = new SNSClient({ region: this.region });
   }
 
-  async publishMessage(
-    topicArn: string,
-    message: SNSMessage,
-  ): Promise<string> {
+  async publishMessage(topicArn: string, message: SNSMessage): Promise<string> {
     try {
       const command = new PublishCommand({
         TopicArn: topicArn,
@@ -101,7 +104,10 @@ export class SNSService {
   async publishToMultipleTopics(
     topicArns: string[],
     message: SNSMessage,
-  ): Promise<{ successful: string[]; failed: { topicArn: string; error: string }[] }> {
+  ): Promise<{
+    successful: string[];
+    failed: { topicArn: string; error: string }[];
+  }> {
     const successful: string[] = [];
     const failed: { topicArn: string; error: string }[] = [];
 

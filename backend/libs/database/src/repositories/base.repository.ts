@@ -1,4 +1,10 @@
-import { EntityRepository, EntityManager, FilterQuery, FindOptions, RequiredEntityData } from '@mikro-orm/core';
+import {
+  EntityRepository,
+  EntityManager,
+  FilterQuery,
+  FindOptions,
+  RequiredEntityData,
+} from '@mikro-orm/core';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -54,7 +60,10 @@ export abstract class BaseRepository<T extends object> {
     return count > 0;
   }
 
-  async findAndCount(where?: FilterQuery<T>, options?: any): Promise<[T[], number]> {
+  async findAndCount(
+    where?: FilterQuery<T>,
+    options?: any,
+  ): Promise<[T[], number]> {
     return this.repository.findAndCount(where, options);
   }
 }

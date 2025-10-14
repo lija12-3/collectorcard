@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, EntityManager, FilterQuery, FindOptions } from '@mikro-orm/core';
+import {
+  EntityRepository,
+  EntityManager,
+  FilterQuery,
+  FindOptions,
+} from '@mikro-orm/core';
 import { User } from '../entities/user.entity';
 import { BaseRepository } from '../repositories/base.repository';
 
@@ -48,21 +53,20 @@ export class UserService extends BaseRepository<User> {
   }
 
   // Business-specific methods that extend BaseRepository functionality
-  
+
   async findByEmail(email: string): Promise<User | null> {
     return await this.findOne({ email });
   }
 
   async findByEmailOrNickName(identifier: string): Promise<User | null> {
     return await this.findOne({
-      $or: [
-        { email: identifier },
-        { nickName: identifier },
-      ],
+      $or: [{ email: identifier }, { nickName: identifier }],
     });
   }
 
-  async findAll(options: UserQueryOptions = {}): Promise<{ users: User[]; total: number }> {
+  async findAll(
+    options: UserQueryOptions = {},
+  ): Promise<{ users: User[]; total: number }> {
     const {
       page = 1,
       limit = 10,

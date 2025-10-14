@@ -50,7 +50,10 @@ export class AppConfigService {
   get highnote() {
     return {
       apiKey: this.configService.get<string>('HIGHNOTE_API_KEY'),
-      baseUrl: this.configService.get<string>('HIGHNOTE_BASE_URL', 'https://api.highnote.com'),
+      baseUrl: this.configService.get<string>(
+        'HIGHNOTE_BASE_URL',
+        'https://api.highnote.com',
+      ),
     };
   }
 
@@ -66,8 +69,14 @@ export class AppConfigService {
   // Security Configuration
   get security() {
     return {
-      corsOrigin: this.configService.get<string>('CORS_ORIGIN', 'http://localhost:3000'),
-      rateLimitWindowMs: this.configService.get<number>('RATE_LIMIT_WINDOW_MS', 900000),
+      corsOrigin: this.configService.get<string>(
+        'CORS_ORIGIN',
+        'http://localhost:3000',
+      ),
+      rateLimitWindowMs: this.configService.get<number>(
+        'RATE_LIMIT_WINDOW_MS',
+        900000,
+      ),
       rateLimitMax: this.configService.get<number>('RATE_LIMIT_MAX', 100),
     };
   }
@@ -76,7 +85,10 @@ export class AppConfigService {
   get logging() {
     return {
       level: this.configService.get<string>('LOG_LEVEL', 'info'),
-      filePath: this.configService.get<string>('LOG_FILE_PATH', './logs/app.log'),
+      filePath: this.configService.get<string>(
+        'LOG_FILE_PATH',
+        './logs/app.log',
+      ),
       maxSize: this.configService.get<string>('LOG_MAX_SIZE', '20m'),
       maxFiles: this.configService.get<string>('LOG_MAX_FILES', '14d'),
     };

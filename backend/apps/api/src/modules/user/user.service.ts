@@ -28,28 +28,27 @@ export class UserService extends BaseRepository<User> {
     if (!entity) {
       return null;
     }
-    
+
     Object.assign(entity, data);
     await this.em.persistAndFlush(entity);
     return entity;
   }
 
   // Business-specific methods that extend BaseRepository functionality
-  
+
   async findByEmail(email: string): Promise<User | null> {
     return await this.findOne({ email });
   }
 
   async findByEmailOrNickName(identifier: string): Promise<User | null> {
     return await this.findOne({
-      $or: [
-        { email: identifier },
-        { nickName: identifier },
-      ],
+      $or: [{ email: identifier }, { nickName: identifier }],
     });
   }
 
-  async findAll(options: UserQueryDto = {}): Promise<{ users: User[]; total: number }> {
+  async findAll(
+    options: UserQueryDto = {},
+  ): Promise<{ users: User[]; total: number }> {
     const {
       page = 1,
       limit = 10,

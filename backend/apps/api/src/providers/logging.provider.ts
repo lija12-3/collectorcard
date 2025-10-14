@@ -65,11 +65,16 @@ export class LoggingProvider implements LoggerService {
 
   setLogLevels(levels: LogLevel[]) {
     // Winston doesn't have a direct equivalent, but we can adjust the level
-    const winstonLevel = levels.includes('debug') ? 'debug' : 
-                        levels.includes('verbose') ? 'verbose' : 
-                        levels.includes('log') ? 'info' : 
-                        levels.includes('warn') ? 'warn' : 'error';
-    
+    const winstonLevel = levels.includes('debug')
+      ? 'debug'
+      : levels.includes('verbose')
+        ? 'verbose'
+        : levels.includes('log')
+          ? 'info'
+          : levels.includes('warn')
+            ? 'warn'
+            : 'error';
+
     this.logger.level = winstonLevel;
   }
 }

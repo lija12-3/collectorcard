@@ -21,6 +21,7 @@ user/
 ## Features
 
 ### User Entity Fields
+
 - `email` (required, unique)
 - `firstName` (optional)
 - `nickName` (optional)
@@ -46,6 +47,7 @@ user/
 ### DTOs
 
 #### CreateUserDto
+
 ```typescript
 {
   email: string;
@@ -61,7 +63,9 @@ user/
 ```
 
 #### UpdateUserDto
+
 Extends CreateUserDto with additional fields:
+
 ```typescript
 {
   ...CreateUserDto;
@@ -70,6 +74,7 @@ Extends CreateUserDto with additional fields:
 ```
 
 #### UserQueryDto
+
 ```typescript
 {
   page?: number;           // Default: 1
@@ -84,6 +89,7 @@ Extends CreateUserDto with additional fields:
 ## Usage
 
 The module is automatically imported in the main AppModule and provides:
+
 - Full CRUD operations
 - Input validation
 - Type safety

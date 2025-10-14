@@ -38,10 +38,10 @@ export class User {
   @Property({ default: false })
   isPhoneVerified: boolean = false;
 
-  @Property({ type: 'json', nullable: true })
+  @Property({ type: 'jsonb', nullable: true })
   profileData?: Record<string, any>;
 
-  @Property({ type: 'json', nullable: true })
+  @Property({ type: 'jsonb', nullable: true })
   preferences?: Record<string, any>;
 
   @Property()

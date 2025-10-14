@@ -9,7 +9,7 @@ Parameters:
   WorkloadAccountArns:
     Type: CommaDelimitedList
     Description: Comma-separated list of AWS account ARNs that need access to Lambda artifacts (e.g., arn:aws:iam::123456789012:root)
-    Default: "arn:aws:iam::000000000000:root"
+    Default: 'arn:aws:iam::000000000000:root'
 
 Resources:
   LambdaArtifactsBucket:
@@ -54,7 +54,7 @@ Resources:
               - s3:GetObject
               - s3:GetObjectVersion
             Resource: !Sub ${LambdaArtifactsBucket.Arn}/*
-          
+
           # Allow cross-account access for workload accounts
           - Sid: AllowCrossAccountLambdaAccess
             Effect: Allow
@@ -67,7 +67,7 @@ Resources:
             Resource:
               - !GetAtt LambdaArtifactsBucket.Arn
               - !Sub ${LambdaArtifactsBucket.Arn}/*
-          
+
           # Allow CI/CD to upload artifacts (from shared services account)
           - Sid: AllowSharedServicesUpload
             Effect: Allow
@@ -78,7 +78,7 @@ Resources:
               - s3:PutObjectAcl
               - s3:DeleteObject
             Resource: !Sub ${LambdaArtifactsBucket.Arn}/*
-          
+
           # Deny insecure transport
           - Sid: DenyInsecureTransport
             Effect: Deny

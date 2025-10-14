@@ -9,12 +9,8 @@
     "**/node_modules/**",
     "**/dist/**"
   ],
-  "includePatterns": [
-    "**/*.ts"
-  ],
-  "excludeExports": [
-    "default"
-  ],
+  "includePatterns": ["**/*.ts"],
+  "excludeExports": ["default"],
   "addNewlineAtEndOfFile": true,
   "useSemicolon": true,
   "useTimestamp": true,

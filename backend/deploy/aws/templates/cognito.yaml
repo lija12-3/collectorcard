@@ -35,7 +35,7 @@ Parameters:
     Description: Base URL for magic links (deep link, e.g., myapp://magic). You can also use https://api.yourdomain.tld/auth/magic/consume
   CreateIdentityPool:
     Type: String
-    AllowedValues: ['true','false']
+    AllowedValues: ['true', 'false']
     Default: 'false'
 
 Conditions:
@@ -84,7 +84,7 @@ Resources:
                 Action:
                   - ses:SendEmail
                   - ses:SendRawEmail
-                Resource: "*"
+                Resource: '*'
 
   PreAuthenticationFn:
     Type: AWS::Lambda::Function
@@ -161,7 +161,7 @@ Resources:
       UserPoolName: !Sub ${ProjectName}-user-pool
       UsernameAttributes: [email]
       AutoVerifiedAttributes: [email]
-      MfaConfiguration: "OFF"
+      MfaConfiguration: 'OFF'
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -190,9 +190,9 @@ Resources:
         PreTokenGeneration: !GetAtt PreTokenGenerationFn.Arn
       VerificationMessageTemplate:
         DefaultEmailOption: CONFIRM_WITH_CODE
-        EmailSubject: "Your verification code"
-        EmailMessageByLink: "Click the link to verify your email: {##Click Here##}"
-        EmailMessage: "Your verification code is {####}. Enter this in the app to verify."
+        EmailSubject: 'Your verification code'
+        EmailMessageByLink: 'Click the link to verify your email: {##Click Here##}'
+        EmailMessage: 'Your verification code is {####}. Enter this in the app to verify.'
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -317,15 +317,15 @@ Outputs:
   RegionOut:
     Value: !Ref Region
     Export:
-      Name: !Sub "${ProjectName}:Region"
+      Name: !Sub '${ProjectName}:Region'
   UserPoolId:
     Value: !Ref UserPool
     Export:
-      Name: !Sub "${ProjectName}:UserPoolId"
+      Name: !Sub '${ProjectName}:UserPoolId'
   UserPoolClientId:
     Value: !Ref UserPoolClient
     Export:
-      Name: !Sub "${ProjectName}:UserPoolClientId"
+      Name: !Sub '${ProjectName}:UserPoolClientId'
   MagicLinksTableName:
     Value: !Ref MagicLinksTable
   IdentityPoolId:

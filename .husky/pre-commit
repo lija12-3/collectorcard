@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Change to backend directory and run checks
+cd backend
+
+# Run lint-staged for staged files
+npx lint-staged
+
+# Run type checking
+npm run type-check
+
+# Run build check
+npm run build:api

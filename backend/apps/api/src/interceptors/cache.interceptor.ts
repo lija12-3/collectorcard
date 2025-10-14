@@ -27,10 +27,11 @@ export class CacheInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const ttl = this.reflector.getAllAndOverride<number>(CACHE_TTL_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]) || 300000; // 5 minutes default
+    const ttl =
+      this.reflector.getAllAndOverride<number>(CACHE_TTL_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) || 300000; // 5 minutes default
 
     const request = context.switchToHttp().getRequest();
     const cacheKey = this.generateCacheKey(request);
@@ -43,7 +44,7 @@ export class CacheInterceptor implements NestInterceptor {
 
     // If not in cache, execute and cache the result
     return next.handle().pipe(
-      tap((response) => {
+      tap(response => {
         this.cacheProvider.set(cacheKey, response, ttl);
       }),
     );

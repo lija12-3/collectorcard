@@ -25,12 +25,12 @@ export class LoggingInterceptor implements NestInterceptor {
         const response = context.switchToHttp().getResponse();
         const { statusCode } = response;
         const duration = Date.now() - now;
-        
+
         this.logger.log(
           `Outgoing response: ${method} ${url} ${statusCode} - ${duration}ms`,
         );
       }),
-      catchError((error) => {
+      catchError(error => {
         const duration = Date.now() - now;
         this.logger.error(
           `Request failed: ${method} ${url} - ${duration}ms - ${error.message}`,

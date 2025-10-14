@@ -7,7 +7,8 @@ export const PUBLIC_KEY = 'isPublic';
 
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
 
-export const Groups = (...groups: UserGroups[]) => SetMetadata(GROUPS_KEY, groups);
+export const Groups = (...groups: UserGroups[]) =>
+  SetMetadata(GROUPS_KEY, groups);
 
 export const Public = () => SetMetadata(PUBLIC_KEY, true);
 

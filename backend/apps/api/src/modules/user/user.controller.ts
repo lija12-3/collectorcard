@@ -15,7 +15,14 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UserQueryDto } from './dto';
 import { AccessTokenGuard } from '@libs/authentication';
-import { Public, Roles, Cache, CurrentUser, Encrypt, Decrypt } from '../../decorators';
+import {
+  Public,
+  Roles,
+  Cache,
+  CurrentUser,
+  Encrypt,
+  Decrypt,
+} from '../../decorators';
 
 @Controller('users')
 @UseGuards(AccessTokenGuard)

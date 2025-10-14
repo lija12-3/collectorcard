@@ -5,6 +5,7 @@ A comprehensive NestJS-based API application with advanced features including gl
 ## 🚀 Features
 
 ### Core Features
+
 - **NestJS Framework**: Modern, scalable Node.js framework
 - **MikroORM**: Type-safe ORM with MySQL support
 - **AWS Aurora DB**: Support for read/write replicas
@@ -15,6 +16,7 @@ A comprehensive NestJS-based API application with advanced features including gl
 - **CORS**: Cross-origin resource sharing support
 
 ### Advanced Features
+
 - **Global Exception Filter**: Centralized error handling
 - **Custom Providers**: Encryption, logging, and caching services
 - **Middleware**: Request logging, CORS, and rate limiting
@@ -72,6 +74,7 @@ apps/api/src/
 ## 🔧 Providers
 
 ### EncryptionProvider
+
 - **Encrypt/Decrypt**: AES-256-GCM encryption
 - **Hashing**: PBKDF2 password hashing
 - **Random Generation**: Secure random string generation
@@ -80,7 +83,7 @@ apps/api/src/
 @Injectable()
 export class MyService {
   constructor(private encryptionProvider: EncryptionProvider) {}
-  
+
   encryptData(data: string) {
     return this.encryptionProvider.encrypt(data);
   }
@@ -88,11 +91,13 @@ export class MyService {
 ```
 
 ### LoggingProvider
+
 - **Winston Integration**: Structured logging
 - **File Rotation**: Automatic log file rotation
 - **Multiple Levels**: Error, warn, info, debug, verbose
 
 ### CacheProvider
+
 - **In-Memory Cache**: Fast key-value storage
 - **TTL Support**: Time-to-live for cache entries
 - **Statistics**: Cache hit/miss statistics
@@ -100,6 +105,7 @@ export class MyService {
 ## 🛡️ Guards
 
 ### RolesGuard
+
 Role-based access control for endpoints.
 
 ```typescript
@@ -111,6 +117,7 @@ async findAll() {
 ```
 
 ### PublicGuard
+
 Mark endpoints as public (skip authentication).
 
 ```typescript
@@ -124,6 +131,7 @@ async publicEndpoint() {
 ## 🎨 Decorators
 
 ### @Encrypt
+
 Encrypt specific request body fields.
 
 ```typescript
@@ -134,6 +142,7 @@ async create(@Body() data: CreateUserDto, @Encrypt('sensitiveData') encryptedDat
 ```
 
 ### @Decrypt
+
 Decrypt specific request body fields.
 
 ```typescript
@@ -144,6 +153,7 @@ async create(@Body() data: CreateUserDto, @Decrypt('encryptedData') decryptedDat
 ```
 
 ### @Cache
+
 Cache endpoint responses.
 
 ```typescript
@@ -155,6 +165,7 @@ async findAll() {
 ```
 
 ### @CurrentUser
+
 Get current authenticated user.
 
 ```typescript
@@ -167,25 +178,31 @@ async getProfile(@CurrentUser() user: User) {
 ## 🔄 Middleware
 
 ### RequestLoggingMiddleware
+
 Logs all incoming requests and outgoing responses with timing.
 
 ### CorsMiddleware
+
 Handles CORS configuration with environment-based origins.
 
 ### RateLimitingMiddleware
+
 Implements rate limiting to prevent abuse.
 
 ## 🚦 Interceptors
 
 ### LoggingInterceptor
+
 Global request/response logging with error handling.
 
 ### CacheInterceptor
+
 Automatic response caching based on @Cache decorator.
 
 ## 📊 API Endpoints
 
 ### Users
+
 - `POST /api/v1/users` - Create user
 - `GET /api/v1/users` - List users (cached, role-protected)
 - `GET /api/v1/users/:id` - Get user by ID
@@ -238,22 +255,26 @@ LOG_LEVEL=info
 ## 🚀 Getting Started
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Set up environment variables**:
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 3. **Run migrations**:
+
    ```bash
    npm run migration:up
    ```
 
 4. **Start development server**:
+
    ```bash
    npm run start:api:dev
    ```
@@ -267,6 +288,7 @@ LOG_LEVEL=info
 ## 📝 Usage Examples
 
 ### Creating a User with Encryption
+
 ```typescript
 @Post()
 async create(@Body() createUserDto: CreateUserDto) {
@@ -276,6 +298,7 @@ async create(@Body() createUserDto: CreateUserDto) {
 ```
 
 ### Role-Based Access Control
+
 ```typescript
 @Get('admin-only')
 @Roles('admin')
@@ -285,6 +308,7 @@ async adminOnlyEndpoint() {
 ```
 
 ### Caching Responses
+
 ```typescript
 @Get('expensive-operation')
 @Cache(600000) // Cache for 10 minutes
@@ -294,6 +318,7 @@ async expensiveOperation() {
 ```
 
 ### Public Endpoints
+
 ```typescript
 @Get('health')
 @Public()

@@ -171,9 +171,7 @@
       "indexes": [
         {
           "keyName": "users_username_index",
-          "columnNames": [
-            "username"
-          ],
+          "columnNames": ["username"],
           "composite": false,
           "constraint": false,
           "primary": false,
@@ -181,9 +179,7 @@
         },
         {
           "keyName": "users_email_index",
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": false,
           "primary": false,
@@ -191,9 +187,7 @@
         },
         {
           "keyName": "users_username_unique",
-          "columnNames": [
-            "username"
-          ],
+          "columnNames": ["username"],
           "composite": false,
           "constraint": true,
           "primary": false,
@@ -201,9 +195,7 @@
         },
         {
           "keyName": "users_email_unique",
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": true,
           "primary": false,
@@ -211,9 +203,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,

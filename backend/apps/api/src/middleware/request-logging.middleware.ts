@@ -18,17 +18,17 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     res.end = function (chunk?: any, encoding?: any, cb?: any) {
       const duration = Date.now() - startTime;
       const { statusCode } = res;
-      
+
       // Log response
       const logLevel = statusCode >= 400 ? 'error' : 'log';
       const message = `${method} ${originalUrl} ${statusCode} - ${duration}ms - ${ip}`;
-      
+
       if (logLevel === 'error') {
         Logger.prototype.error.call(this, message);
       } else {
         Logger.prototype.log.call(this, message);
       }
-      
+
       return originalEnd.call(this, chunk, encoding, cb);
     };
 

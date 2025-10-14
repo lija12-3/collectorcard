@@ -26,13 +26,15 @@ export class DatabaseConfigService {
 
   createMikroOrmOptions(): MikroOrmModuleOptions {
     const baseConfig = {
-      type: this.configService.get<string>('DB_TYPE') as any || 'mysql',
+      type: (this.configService.get<string>('DB_TYPE') as any) || 'postgresql',
       host: this.configService.get<string>('DB_HOST'),
-      port: this.configService.get<number>('DB_PORT'),
-      user: this.configService.get<string>('DB_USERNAME'),
+      port: this.configService.get<number>('DB_PORT', 5432),
+      user: this.configService.get<string>('DB_USERNAME', 'postgres'),
       password: this.configService.get<string>('DB_PASSWORD'),
-      dbName: this.configService.get<string>('DB_DATABASE'),
-      ssl: this.configService.get<boolean>('DB_SSL') ? { rejectUnauthorized: false } : false,
+      dbName: this.configService.get<string>('DB_DATABASE', 'appdb'),
+      ssl: this.configService.get<boolean>('DB_SSL')
+        ? { rejectUnauthorized: false }
+        : false,
       debug: this.configService.get<boolean>('DB_LOGGING') || false,
       entities: [__dirname + '/../entities/*.entity{.ts,.js}'],
       migrations: {
@@ -50,9 +52,14 @@ export class DatabaseConfigService {
         replicas: [
           {
             host: readHost,
-            port: this.configService.get<number>('DB_READ_PORT') || baseConfig.port,
-            user: this.configService.get<string>('DB_READ_USERNAME') || baseConfig.user,
-            password: this.configService.get<string>('DB_READ_PASSWORD') || baseConfig.password,
+            port:
+              this.configService.get<number>('DB_READ_PORT') || baseConfig.port,
+            user:
+              this.configService.get<string>('DB_READ_USERNAME') ||
+              baseConfig.user,
+            password:
+              this.configService.get<string>('DB_READ_PASSWORD') ||
+              baseConfig.password,
             dbName: baseConfig.dbName,
           },
         ],

@@ -5,7 +5,11 @@ import { LoggingInterceptor } from '../interceptors/logging.interceptor';
 import { CacheInterceptor } from '../interceptors/cache.interceptor';
 import { RolesGuard } from '../guards/roles.guard';
 import { PublicGuard } from '../guards/public.guard';
-import { EncryptionProvider, LoggingProvider, CacheProvider } from '../providers';
+import {
+  EncryptionProvider,
+  LoggingProvider,
+  CacheProvider,
+} from '../providers';
 
 @Global()
 @Module({
@@ -14,13 +18,13 @@ import { EncryptionProvider, LoggingProvider, CacheProvider } from '../providers
     EncryptionProvider,
     LoggingProvider,
     CacheProvider,
-    
+
     // Global Exception Filter
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
     },
-    
+
     // Global Interceptors
     {
       provide: APP_INTERCEPTOR,
@@ -30,7 +34,7 @@ import { EncryptionProvider, LoggingProvider, CacheProvider } from '../providers
       provide: APP_INTERCEPTOR,
       useClass: CacheInterceptor,
     },
-    
+
     // Global Guards
     {
       provide: APP_GUARD,
@@ -41,10 +45,6 @@ import { EncryptionProvider, LoggingProvider, CacheProvider } from '../providers
       useClass: RolesGuard,
     },
   ],
-  exports: [
-    EncryptionProvider,
-    LoggingProvider,
-    CacheProvider,
-  ],
+  exports: [EncryptionProvider, LoggingProvider, CacheProvider],
 })
 export class CoreModule {}

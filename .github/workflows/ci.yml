@@ -1,0 +1,101 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+      
+    - name: Run ESLint
+      working-directory: ./backend
+      run: npm run lint
+      
+    - name: Run Prettier check
+      working-directory: ./backend
+      run: npm run format:check
+      
+    - name: Run TypeScript type check
+      working-directory: ./backend
+      run: npm run type-check
+      
+    - name: Build API application
+      working-directory: ./backend
+      run: npm run build:api
+      
+    - name: Run tests (if available)
+      working-directory: ./backend
+      run: npm run test --if-present
+      
+    - name: Check for security vulnerabilities
+      working-directory: ./backend
+      run: npm audit --audit-level=moderate
+      
+  build-and-deploy:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+      
+    - name: Build all applications
+      working-directory: ./backend
+      run: |
+        npm run build:api
+        npm run build:lambdas
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          backend/dist/
+          backend/apps/api/dist/
+        retention-days: 7
+        
+    - name: Deploy to staging (if develop branch)
+      if: github.ref == 'refs/heads/develop'
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        
+    - name: Deploy to production (if main branch)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here

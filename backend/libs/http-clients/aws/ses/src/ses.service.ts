@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { SESClient, SendEmailCommand, SendRawEmailCommand, GetSendQuotaCommand } from '@aws-sdk/client-ses';
+import {
+  SESClient,
+  SendEmailCommand,
+  SendRawEmailCommand,
+  GetSendQuotaCommand,
+} from '@aws-sdk/client-ses';
 
 export interface EmailMessage {
   to: string | string[];
@@ -32,8 +37,16 @@ export class SESService {
         Source: message.from,
         Destination: {
           ToAddresses: Array.isArray(message.to) ? message.to : [message.to],
-          CcAddresses: message.cc ? (Array.isArray(message.cc) ? message.cc : [message.cc]) : undefined,
-          BccAddresses: message.bcc ? (Array.isArray(message.bcc) ? message.bcc : [message.bcc]) : undefined,
+          CcAddresses: message.cc
+            ? Array.isArray(message.cc)
+              ? message.cc
+              : [message.cc]
+            : undefined,
+          BccAddresses: message.bcc
+            ? Array.isArray(message.bcc)
+              ? message.bcc
+              : [message.bcc]
+            : undefined,
         },
         Message: {
           Subject: {
@@ -41,14 +54,18 @@ export class SESService {
             Charset: 'UTF-8',
           },
           Body: {
-            Text: message.text ? {
-              Data: message.text,
-              Charset: 'UTF-8',
-            } : undefined,
-            Html: message.html ? {
-              Data: message.html,
-              Charset: 'UTF-8',
-            } : undefined,
+            Text: message.text
+              ? {
+                  Data: message.text,
+                  Charset: 'UTF-8',
+                }
+              : undefined,
+            Html: message.html
+              ? {
+                  Data: message.html,
+                  Charset: 'UTF-8',
+                }
+              : undefined,
           },
         },
         ReplyToAddresses: message.replyTo ? [message.replyTo] : undefined,
@@ -86,7 +103,7 @@ export class SESService {
     try {
       const command = new GetSendQuotaCommand({});
       const result = await this.sesClient.send(command);
-      
+
       return {
         max24HourSend: result.Max24HourSend || 0,
         maxSendRate: result.MaxSendRate || 0,

@@ -6,26 +6,26 @@ Parameters:
     Type: String
     Default: collectors-card
     Description: Project name used for naming resources
-  
+
   GitHubRepo:
     Type: String
     Description: GitHub repository name (e.g., username/repo-name)
-  
+
   GitHubBranch:
     Type: String
     Default: main
     Description: Branch to track for deployments
-  
+
   GitHubToken:
     Type: String
     NoEcho: true
     Description: GitHub personal access token for repository access
-  
+
   LambdaArtifactsBucket:
     Type: String
     Default: collectors-card-lambdas
     Description: S3 bucket where Lambda artifacts are stored
-  
+
   CognitoStackName:
     Type: String
     Default: collectors-card-cognito
@@ -183,7 +183,7 @@ Resources:
                 PollForSourceChanges: false
               OutputArtifacts:
                 - Name: SourceOutput
-        
+
         # Build stage - Compile and package Lambdas
         - Name: Build
           Actions:
@@ -199,7 +199,7 @@ Resources:
                 - Name: SourceOutput
               OutputArtifacts:
                 - Name: BuildOutput
-        
+
         # Deploy stage - Update Lambda functions
         - Name: Deploy
           Actions:
@@ -219,7 +219,7 @@ Resources:
                   }
               InputArtifacts:
                 - Name: BuildOutput
-            
+
             - Name: UpdatePreTokenLambda
               ActionTypeId:
                 Category: Invoke
@@ -236,7 +236,7 @@ Resources:
                   }
               InputArtifacts:
                 - Name: BuildOutput
-            
+
             - Name: UpdateDefineChallengeLambda
               ActionTypeId:
                 Category: Invoke
@@ -253,7 +253,7 @@ Resources:
                   }
               InputArtifacts:
                 - Name: BuildOutput
-            
+
             - Name: UpdateCreateChallengeLambda
               ActionTypeId:
                 Category: Invoke
@@ -270,7 +270,7 @@ Resources:
                   }
               InputArtifacts:
                 - Name: BuildOutput
-            
+
             - Name: UpdateVerifyChallengeLambda
               ActionTypeId:
                 Category: Invoke
@@ -352,10 +352,10 @@ Resources:
         ZipFile: |
           import json
           import boto3
-          
+
           lambda_client = boto3.client('lambda')
           codepipeline = boto3.client('codepipeline')
-          
+
           def handler(event, context):
               job_id = event['CodePipeline.job']['id']
               
@@ -393,11 +393,11 @@ Outputs:
     Value: !Ref LambdaPipeline
     Export:
       Name: !Sub ${ProjectName}:PipelineName
-  
+
   PipelineUrl:
     Description: CodePipeline console URL
     Value: !Sub https://console.aws.amazon.com/codesuite/codepipeline/pipelines/${LambdaPipeline}/view
-  
+
   BuildProjectName:
     Description: CodeBuild project name
     Value: !Ref LambdaBuildProject

@@ -24,15 +24,16 @@ export class EncryptionProvider {
     try {
       const iv = crypto.randomBytes(this.ivLength);
       const cipher = crypto.createCipher(this.algorithm, this.encryptionKey);
-      
+
       let encrypted = cipher.update(text, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      
+
       const tag = cipher.getAuthTag();
-      
+
       // Combine iv, tag, and encrypted data
-      const result = iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
-      
+      const result =
+        iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
+
       this.logger.debug('Data encrypted successfully');
       return result;
     } catch (error) {
@@ -52,7 +53,10 @@ export class EncryptionProvider {
       const tag = Buffer.from(parts[1], 'hex');
       const encrypted = parts[2];
 
-      const decipher = crypto.createDecipher(this.algorithm, this.encryptionKey);
+      const decipher = crypto.createDecipher(
+        this.algorithm,
+        this.encryptionKey,
+      );
       decipher.setAuthTag(tag);
 
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');

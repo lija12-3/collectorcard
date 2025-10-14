@@ -24,7 +24,7 @@ export class CacheProvider {
   get<T>(key: string): T | null {
     try {
       const item = this.cache.get(key);
-      
+
       if (!item) {
         this.logger.debug(`Cache miss for key: ${key}`);
         return null;
@@ -47,7 +47,9 @@ export class CacheProvider {
   delete(key: string): boolean {
     try {
       const deleted = this.cache.delete(key);
-      this.logger.debug(`Cache ${deleted ? 'deleted' : 'not found'} for key: ${key}`);
+      this.logger.debug(
+        `Cache ${deleted ? 'deleted' : 'not found'} for key: ${key}`,
+      );
       return deleted;
     } catch (error) {
       this.logger.error(`Failed to delete cache for key: ${key}`, error);
@@ -68,12 +70,12 @@ export class CacheProvider {
     try {
       const item = this.cache.get(key);
       if (!item) return false;
-      
+
       if (Date.now() > item.expiresAt) {
         this.cache.delete(key);
         return false;
       }
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Failed to check cache for key: ${key}`, error);
@@ -84,7 +86,7 @@ export class CacheProvider {
   getStats(): { size: number; keys: string[] } {
     // Clean expired items first
     this.cleanExpired();
-    
+
     return {
       size: this.cache.size,
       keys: Array.from(this.cache.keys()),

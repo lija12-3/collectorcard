@@ -7,7 +7,11 @@ import { ErrorHandlerModule } from '@libs/error-handlers';
 import { AuthController } from './auth.controller';
 import { UserModule } from './modules';
 import { CoreModule } from './core/core.module';
-import { RequestLoggingMiddleware, CorsMiddleware, RateLimitingMiddleware } from './middleware';
+import {
+  RequestLoggingMiddleware,
+  CorsMiddleware,
+  RateLimitingMiddleware,
+} from './middleware';
 
 @Module({
   imports: [
