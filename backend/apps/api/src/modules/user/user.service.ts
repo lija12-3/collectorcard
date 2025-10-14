@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, EntityManager, FilterQuery } from '@mikro-orm/core';
-import { User } from '@libs/database';
-import { BaseRepository } from '@libs/database';
+import { User, BaseRepository } from '@libs/database';
 import { CreateUserDto, UpdateUserDto, UserQueryDto } from './dto';
 
 @Injectable()

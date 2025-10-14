@@ -2,9 +2,7 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsDateString,
   IsObject,
-  IsBoolean,
   IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
