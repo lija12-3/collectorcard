@@ -24,7 +24,7 @@ export class AuthModule {
         JwtModule.register({
           secret: options.config.jwtSecret,
           signOptions: {
-            expiresIn: options.config.jwtExpiresIn,
+            expiresIn: options.config.jwtExpiresIn as any,
           },
         }),
       ],
