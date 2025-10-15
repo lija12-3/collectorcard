@@ -9,6 +9,7 @@ export * from './repositories/base.repository';
 
 // Entities
 export * from './entities/user.entity';
+export * from './entities/user-history.entity';
 
 // Services
 export * from './services/user.service';

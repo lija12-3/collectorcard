@@ -6,14 +6,14 @@ export class SensitiveUserDto {
   email: string;
 
   @IsString()
-  firstName: string;
+  first_name: string;
 
   @IsString()
-  lastName: string;
+  last_name: string;
 
   @IsOptional()
   @IsString()
-  nickName?: string;
+  nick_name?: string;
 
   @IsDate()
   @Type(() => Date)
@@ -43,14 +43,14 @@ export class DecryptUserDto {
   email: string;
 
   @IsString()
-  firstName: string;
+  first_name: string;
 
   @IsString()
-  lastName: string;
+  last_name: string;
 
   @IsOptional()
   @IsString()
-  nickName?: string;
+  nick_name?: string;
 
   @IsDate()
   @Type(() => Date)

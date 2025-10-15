@@ -107,9 +107,9 @@ export class UserController {
     return user;
   }
 
-  @Get('nickname/:nickName')
-  async findByNickName(@Param('nickName') nickName: string) {
-    const user = await this.userService.findOne({ nickName });
+  @Get('nickname/:nick_name')
+  async findByNickName(@Param('nick_name') nick_name: string) {
+    const user = await this.userService.findOne({ nick_name });
     if (!user) {
       throw new Error('User not found');
     }
@@ -127,15 +127,15 @@ export class UserController {
     // The @Encrypt decorator will automatically encrypt specified fields
     // from the request body and provide them in the encryptedData parameter
 
-    // Create the user with basic data first
-    const basicUserData = {
-      email: sensitiveUserDto.email,
-      firstName: sensitiveUserDto.firstName,
-      lastName: sensitiveUserDto.lastName,
-      nickName: sensitiveUserDto.nickName,
-      dob: sensitiveUserDto.dob,
-      zipcode: sensitiveUserDto.zipcode,
-    };
+        // Create the user with basic data first
+        const basicUserData = {
+          email: sensitiveUserDto.email,
+          first_name: sensitiveUserDto.first_name,
+          last_name: sensitiveUserDto.last_name,
+          nick_name: sensitiveUserDto.nick_name,
+          dob: sensitiveUserDto.dob,
+          zipcode: sensitiveUserDto.zipcode,
+        };
 
     const user = await this.userService.create(basicUserData);
 
@@ -211,15 +211,15 @@ export class UserController {
       throw new Error('User not found');
     }
 
-    // Update basic user data
-    const basicUserData = {
-      email: sensitiveData.email,
-      firstName: sensitiveData.firstName,
-      lastName: sensitiveData.lastName,
-      nickName: sensitiveData.nickName,
-      dob: sensitiveData.dob,
-      zipcode: sensitiveData.zipcode,
-    };
+        // Update basic user data
+        const basicUserData = {
+          email: sensitiveData.email,
+          first_name: sensitiveData.first_name,
+          last_name: sensitiveData.last_name,
+          nick_name: sensitiveData.nick_name,
+          dob: sensitiveData.dob,
+          zipcode: sensitiveData.zipcode,
+        };
 
     const updatedUser = await this.userService.update(id, basicUserData);
 

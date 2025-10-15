@@ -3,10 +3,12 @@ import {
   IsString,
   IsBoolean,
   IsNumber,
+  IsEnum,
   Min,
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { UserStatus } from '@libs/database';
 
 export class UserQueryDto {
   @IsOptional()
@@ -27,17 +29,11 @@ export class UserQueryDto {
   search?: string;
 
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isActive?: boolean;
+  @IsEnum(UserStatus)
+  user_status?: UserStatus;
 
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
-  isEmailVerified?: boolean;
-
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isPhoneVerified?: boolean;
+  is_email_verified?: boolean;
 }

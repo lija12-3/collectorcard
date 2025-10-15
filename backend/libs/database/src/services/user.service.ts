@@ -1,40 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, EntityManager, FilterQuery } from '@mikro-orm/core';
-import { User } from '../entities/user.entity';
+import { User, UserStatus } from '../entities/user.entity';
+import { UserHistory } from '../entities/user-history.entity';
 import { BaseRepository } from '../repositories/base.repository';
 
 export interface CreateUserDto {
   email: string;
-  firstName?: string;
-  nickName?: string;
-  lastName?: string;
-  dob?: Date;
-  zipcode?: string;
-  phoneNumber?: string;
-  profileData?: Record<string, any>;
-  preferences?: Record<string, any>;
+  first_name: string;
+  last_name: string;
+  nick_name?: string;
+  dob: Date;
+  zipcode: string;
 }
 
 export interface UpdateUserDto {
-  firstName?: string;
-  nickName?: string;
-  lastName?: string;
+  first_name?: string;
+  last_name?: string;
+  nick_name?: string;
   dob?: Date;
   zipcode?: string;
-  phoneNumber?: string;
-  profileData?: Record<string, any>;
-  preferences?: Record<string, any>;
-  isActive?: boolean;
+  user_status?: UserStatus;
 }
 
 export interface UserQueryOptions {
   page?: number;
   limit?: number;
   search?: string;
-  isActive?: boolean;
-  isEmailVerified?: boolean;
-  isPhoneVerified?: boolean;
+  user_status?: UserStatus;
+  is_email_verified?: boolean;
 }
 
 @Injectable()
@@ -55,7 +49,7 @@ export class UserService extends BaseRepository<User> {
 
   async findByEmailOrNickName(identifier: string): Promise<User | null> {
     return await this.findOne({
-      $or: [{ email: identifier }, { nickName: identifier }],
+      $or: [{ email: identifier }, { nick_name: identifier }],
     });
   }
 
@@ -66,31 +60,26 @@ export class UserService extends BaseRepository<User> {
       page = 1,
       limit = 10,
       search,
-      isActive,
-      isEmailVerified,
-      isPhoneVerified,
+      user_status,
+      is_email_verified,
     } = options;
 
     const where: FilterQuery<User> = {};
 
-    if (isActive !== undefined) {
-      where.isActive = isActive;
+    if (user_status !== undefined) {
+      where.user_status = user_status;
     }
 
-    if (isEmailVerified !== undefined) {
-      where.isEmailVerified = isEmailVerified;
-    }
-
-    if (isPhoneVerified !== undefined) {
-      where.isPhoneVerified = isPhoneVerified;
+    if (is_email_verified !== undefined) {
+      where.is_email_verified = is_email_verified;
     }
 
     if (search) {
       where.$or = [
         { email: { $like: `%${search}%` } },
-        { firstName: { $like: `%${search}%` } },
-        { nickName: { $like: `%${search}%` } },
-        { lastName: { $like: `%${search}%` } },
+        { first_name: { $like: `%${search}%` } },
+        { nick_name: { $like: `%${search}%` } },
+        { last_name: { $like: `%${search}%` } },
         { zipcode: { $like: `%${search}%` } },
       ];
     }
@@ -98,7 +87,7 @@ export class UserService extends BaseRepository<User> {
     const [users, total] = await this.findAndCount(where, {
       limit,
       offset: (page - 1) * limit,
-      orderBy: { createdAt: 'DESC' },
+      orderBy: { created_at: 'DESC' },
     });
 
     return { users, total };
@@ -110,7 +99,7 @@ export class UserService extends BaseRepository<User> {
       return false;
     }
 
-    user.isActive = false;
+    user.user_status = UserStatus.DELETED;
     await this.em.persistAndFlush(user);
     return true;
   }
@@ -121,37 +110,43 @@ export class UserService extends BaseRepository<User> {
       return false;
     }
 
-    user.isEmailVerified = true;
-    user.emailVerifiedAt = new Date();
+    user.is_email_verified = true;
+    user.email_verified_at = new Date();
     await this.em.persistAndFlush(user);
     return true;
-  }
-
-  async verifyPhone(id: string): Promise<boolean> {
-    const user = await this.findById(id);
-    if (!user) {
-      return false;
-    }
-
-    user.isPhoneVerified = true;
-    user.phoneVerifiedAt = new Date();
-    await this.em.persistAndFlush(user);
-    return true;
-  }
-
-  async updateLastLogin(id: string): Promise<void> {
-    const user = await this.findById(id);
-    if (user) {
-      user.lastLoginAt = new Date();
-      await this.em.persistAndFlush(user);
-    }
   }
 
   async existsByEmail(email: string): Promise<boolean> {
     return await this.exists({ email });
   }
 
-  async existsByNickName(nickName: string): Promise<boolean> {
-    return await this.exists({ nickName });
+  async existsByNickName(nick_name: string): Promise<boolean> {
+    return await this.exists({ nick_name });
+  }
+
+  // User History methods
+  async createUserHistory(
+    user_id: string,
+    field_name: string,
+    field_value: string,
+    old_value?: string,
+    new_value?: string,
+  ): Promise<UserHistory> {
+    const userHistory = new UserHistory({
+      user_id,
+      field_name,
+      field_value,
+      old_value,
+      new_value,
+    });
+
+    await this.em.persistAndFlush(userHistory);
+    return userHistory;
+  }
+
+  async getUserHistory(user_id: string): Promise<UserHistory[]> {
+    return await this.em.find(UserHistory, { user_id }, {
+      orderBy: { created_at: 'DESC' },
+    });
   }
 }
