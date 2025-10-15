@@ -13,11 +13,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  UserQueryDto,
-} from './dto';
+import { CreateUserDto, UpdateUserDto, UserQueryDto } from './dto';
 import { AccessTokenGuard } from '@libs/authentication';
 import { Public, Roles, Cache } from '../../decorators';
 
@@ -87,7 +83,6 @@ export class UserController {
     }
   }
 
-
   @Get('email/:email')
   @Public() // This endpoint is public
   async findByEmail(@Param('email') email: string) {
@@ -123,7 +118,8 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   async createUserHistory(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() historyData: {
+    @Body()
+    historyData: {
       field_name: string;
       field_value: string;
       old_value?: string;

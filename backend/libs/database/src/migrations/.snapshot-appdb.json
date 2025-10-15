@@ -1,7 +1,5 @@
 {
-  "namespaces": [
-    "public"
-  ],
+  "namespaces": ["public"],
   "name": "public",
   "tables": [
     {
@@ -132,9 +130,7 @@
       "indexes": [
         {
           "keyName": "user_master_email_index",
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": false,
           "primary": false,
@@ -142,9 +138,7 @@
         },
         {
           "keyName": "user_master_email_unique",
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": true,
           "primary": false,
@@ -152,9 +146,7 @@
         },
         {
           "keyName": "user_master_pkey",
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -260,9 +252,7 @@
       "indexes": [
         {
           "keyName": "user_history_pkey",
-          "columnNames": [
-            "user_history_id"
-          ],
+          "columnNames": ["user_history_id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -273,13 +263,9 @@
       "foreignKeys": {
         "user_history_user_user_id_foreign": {
           "constraintName": "user_history_user_user_id_foreign",
-          "columnNames": [
-            "user_user_id"
-          ],
+          "columnNames": ["user_user_id"],
           "localTableName": "public.user_history",
-          "referencedColumnNames": [
-            "user_id"
-          ],
+          "referencedColumnNames": ["user_id"],
           "referencedTableName": "public.user_master",
           "updateRule": "cascade"
         }

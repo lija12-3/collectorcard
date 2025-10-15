@@ -137,8 +137,12 @@ export class UserService extends BaseRepository<User> {
   }
 
   async getUserHistory(user_id: string): Promise<UserHistory[]> {
-    return await this.em.find(UserHistory, { user_id }, {
-      orderBy: { created_at: 'DESC' },
-    });
+    return await this.em.find(
+      UserHistory,
+      { user_id },
+      {
+        orderBy: { created_at: 'DESC' },
+      },
+    );
   }
 }

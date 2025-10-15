@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Index, Unique, Enum } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, Index, Unique } from '@mikro-orm/core';
 import { v4 as uuidv4 } from 'uuid';
 
 export enum UserStatus {
