@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Public Route53 hosted zone for delegated subdomain - managed from the shared services account.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: collectors-card
+    Description: Project or workload identifier used for tagging.
+  SubdomainName:
+    Type: String
+    Default: api.collectorscard.com
+    Description: Fully qualified subdomain to delegate (include the trailing domain, omit the trailing dot).
+  HostedZoneComment:
+    Type: String
+    Default: Managed by CloudFormation
+    Description: Optional comment applied to the hosted zone.
+  PrimaryRecordType:
+    Type: String
+    AllowedValues: [A, AAAA, CNAME, MX, TXT]
+    Default: A
+    Description: Record type for the optional apex record. Leave values empty to skip record creation.
+  PrimaryRecordTTL:
+    Type: Number
+    Default: 300
+    MinValue: 0
+    Description: TTL in seconds for the primary record (ignored if values are blank).
+  PrimaryRecordValues:
+    Type: String
+    Default: ''
+    Description: Comma-separated list of record values (for example, IPs or hostnames). Leave blank to skip creating the record.
+
+Conditions:
+  CreatePrimaryRecord: !Not [!Equals [!Ref PrimaryRecordValues, '']]
+
+Resources:
+  DelegatedHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref SubdomainName
+      HostedZoneConfig:
+        Comment: !Ref HostedZoneComment
+      HostedZoneTags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  PrimaryRecordSet:
+    Condition: CreatePrimaryRecord
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref DelegatedHostedZone
+      Name: !Ref SubdomainName
+      Type: !Ref PrimaryRecordType
+      TTL: !Ref PrimaryRecordTTL
+      ResourceRecords: !Split [",", !Ref PrimaryRecordValues]
+
+Outputs:
+  HostedZoneId:
+    Description: ID of the delegated hosted zone.
+    Value: !Ref DelegatedHostedZone
+    Export:
+      Name: !Sub ${ProjectName}:DelegatedHostedZoneId
+  NameServers:
+    Description: Route53 name servers for delegation (add these as NS records with the registrar).
+    Value: !Join [",", !GetAtt DelegatedHostedZone.NameServers]
+  HostedZoneName:
+    Description: Delegated zone name.
+    Value: !Ref SubdomainName

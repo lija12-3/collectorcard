@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECR repository for container images - Deployed to Shared Services Account
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: collectors-card
+    Description: Project name used for naming resources
+  RepositoryName:
+    Type: String
+    Default: collectors-card/app
+    Description: ECR repository name (must be lowercase and may include forward slashes)
+  WorkloadAccountArns:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of AWS account ARNs that require push/pull access (e.g., arn:aws:iam::123456789012:root)
+    Default: "arn:aws:iam::000000000000:root"
+  ImageTagMutability:
+    Type: String
+    AllowedValues: [MUTABLE, IMMUTABLE]
+    Default: IMMUTABLE
+    Description: Controls whether image tags can be overwritten after push
+  ScanOnPush:
+    Type: String
+    AllowedValues: ['true','false']
+    Default: 'true'
+    Description: Enable ECR vulnerability scanning when images are pushed
+  ExpireUntaggedAfterDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    Description: Number of days to retain untagged images before expiring them
+
+Conditions:
+  EnableScanOnPush: !Equals [!Ref ScanOnPush, 'true']
+
+Resources:
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+      ImageTagMutability: !Ref ImageTagMutability
+      ImageScanningConfiguration:
+        ScanOnPush: !If [EnableScanOnPush, true, false]
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      LifecyclePolicy:
+        LifecyclePolicyText: !Sub |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire untagged images after ${ExpireUntaggedAfterDays} days",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": ${ExpireUntaggedAfterDays}
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      RepositoryPolicyText:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSharedServicesAccount
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
+              - ecr:PutImage
+              - ecr:CompleteLayerUpload
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+          - Sid: AllowWorkloadAccountsPushPull
+            Effect: Allow
+            Principal:
+              AWS: !Ref WorkloadAccountArns
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
+              - ecr:PutImage
+              - ecr:CompleteLayerUpload
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  RepositoryName:
+    Description: ECR repository name
+    Value: !Ref EcrRepository
+    Export:
+      Name: !Sub ${ProjectName}:EcrRepositoryName
+  RepositoryArn:
+    Description: ECR repository ARN
+    Value: !GetAtt EcrRepository.Arn
+    Export:
+      Name: !Sub ${ProjectName}:EcrRepositoryArn
+  RepositoryUri:
+    Description: ECR repository URI
+    Value: !GetAtt EcrRepository.RepositoryUri
+    Export:
+      Name: !Sub ${ProjectName}:EcrRepositoryUri
