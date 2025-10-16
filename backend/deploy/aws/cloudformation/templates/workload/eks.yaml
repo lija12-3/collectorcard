@@ -161,7 +161,7 @@ Resources:
           Fn::Sub: ${NetworkStackName}-PrivateSubnet1Id
         - !ImportValue
           Fn::Sub: ${NetworkStackName}-PrivateSubnet2Id
-    
+
   EFSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -173,25 +173,25 @@ Resources:
         - IpProtocol: tcp
           FromPort: !Ref EFSPort
           ToPort: !Ref EFSPort
-          CidrIp: 
-             Fn::ImportValue: !Sub ${NetworkStackName}-PrivateSubnet1Cidr
+          CidrIp:
+            Fn::ImportValue: !Sub ${NetworkStackName}-PrivateSubnet1Cidr
           Description: !Sub Inbound from Private Subnet1 to ${EnvironmentName} efs filesystem mount
         - IpProtocol: tcp
           FromPort: !Ref EFSPort
           ToPort: !Ref EFSPort
-          CidrIp: 
-             Fn::ImportValue: !Sub ${NetworkStackName}-PrivateSubnet2Cidr
+          CidrIp:
+            Fn::ImportValue: !Sub ${NetworkStackName}-PrivateSubnet2Cidr
           Description: !Sub Inbound from Private Subnet2 to ${EnvironmentName} efs filesystem mount
 Outputs:
   EKSClusterEndpoint:
     Description: 'EKS OIDC Connection URL'
-    Value: 
-      "Fn::GetAtt": ["EKSCluster", "OpenIdConnectIssuerUrl"]
+    Value:
+      'Fn::GetAtt': ['EKSCluster', 'OpenIdConnectIssuerUrl']
     Export:
-      Name: !Sub "${AWS::StackName}-EKSClusterEndpoint" 
+      Name: !Sub '${AWS::StackName}-EKSClusterEndpoint'
   FargatePodSecurityGroup:
     Description: 'EKS Fargate Pod Security group'
-    Value: 
+    Value:
       Ref: FargatePodSecurityGroup
     Export:
-      Name: !Sub "${AWS::StackName}-FargatePodSecurityGroup"
+      Name: !Sub '${AWS::StackName}-FargatePodSecurityGroup'

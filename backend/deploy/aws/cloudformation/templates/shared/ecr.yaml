@@ -13,7 +13,7 @@ Parameters:
   WorkloadAccountArns:
     Type: CommaDelimitedList
     Description: Comma-separated list of AWS account ARNs that require push/pull access (e.g., arn:aws:iam::123456789012:root)
-    Default: "arn:aws:iam::000000000000:root"
+    Default: 'arn:aws:iam::000000000000:root'
   ImageTagMutability:
     Type: String
     AllowedValues: [MUTABLE, IMMUTABLE]
@@ -21,7 +21,7 @@ Parameters:
     Description: Controls whether image tags can be overwritten after push
   ScanOnPush:
     Type: String
-    AllowedValues: ['true','false']
+    AllowedValues: ['true', 'false']
     Default: 'true'
     Description: Enable ECR vulnerability scanning when images are pushed
   ExpireUntaggedAfterDays:

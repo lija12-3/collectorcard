@@ -412,7 +412,7 @@ Outputs:
     Description: Private Subnet 1 ID (AZ1)
     Value: !Ref PrivateSubnet1
     Export:
-      Name: !Sub "${AWS::StackName}-PrivateSubnet1Id"
+      Name: !Sub '${AWS::StackName}-PrivateSubnet1Id'
 
   PrivateSubnet2:
     Description: Private Subnet 2
@@ -424,19 +424,19 @@ Outputs:
     Description: Private Subnet 2 ID (AZ2)
     Value: !Ref PrivateSubnet2
     Export:
-      Name: !Sub "${AWS::StackName}-PrivateSubnet2Id"
+      Name: !Sub '${AWS::StackName}-PrivateSubnet2Id'
 
   PrivateASubnetCidr:
     Description: Availability Zone A Private Subnet CIDR
     Value: !Ref PrivateSubnet1CIDR
     Export:
-      Name: !Sub "${AWS::StackName}-Private-A-CIDR"
+      Name: !Sub '${AWS::StackName}-Private-A-CIDR'
 
   PrivateSubnet1Cidr:
     Description: Private Subnet 1 CIDR (AZ1)
     Value: !Ref PrivateSubnet1CIDR
     Export:
-      Name: !Sub "${AWS::StackName}-PrivateSubnet1Cidr"
+      Name: !Sub '${AWS::StackName}-PrivateSubnet1Cidr'
 
   PrivateBSubnetCidr:
     Description: Availability Zone B Private Subnet CIDR
@@ -448,7 +448,7 @@ Outputs:
     Description: Private Subnet 2 CIDR (AZ2)
     Value: !Ref PrivateSubnet2CIDR
     Export:
-      Name: !Sub "${AWS::StackName}-PrivateSubnet2Cidr"
+      Name: !Sub '${AWS::StackName}-PrivateSubnet2Cidr'
 
   SecurityGroup:
     Description: SecurityGroup

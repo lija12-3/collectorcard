@@ -37,7 +37,9 @@ function execCommand(command, description) {
 
 // Main pre-commit function
 async function runPreCommitChecks() {
-  console.log(`${colors.blue}🔍 Running lightweight pre-commit checks...${colors.reset}`);
+  console.log(
+    `${colors.blue}🔍 Running lightweight pre-commit checks...${colors.reset}`,
+  );
   console.log('==================================================');
 
   // Check if we're in the backend directory

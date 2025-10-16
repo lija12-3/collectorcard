@@ -94,7 +94,8 @@ Resources:
     Properties:
       Name: !Sub ${ClusterIdentifier}-master-credentials
       Description: !Sub Master credentials for ${EnvironmentName} Aurora cluster ${ClusterIdentifier}
-      KmsKeyId: !If [UseCustomSecretKmsKey, !Ref SecretKmsKeyId, !Ref AWS::NoValue]
+      KmsKeyId:
+        !If [UseCustomSecretKmsKey, !Ref SecretKmsKeyId, !Ref AWS::NoValue]
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username":"${MasterUsername}"}'
         GenerateStringKey: password
@@ -155,7 +156,8 @@ Resources:
       PreferredBackupWindow: '05:00-06:00'
       PreferredMaintenanceWindow: 'sun:06:00-sun:07:00'
       StorageEncrypted: true
-      KmsKeyId: !If [UseCustomDbKmsKey, !Ref DatabaseKmsKeyId, !Ref AWS::NoValue]
+      KmsKeyId:
+        !If [UseCustomDbKmsKey, !Ref DatabaseKmsKeyId, !Ref AWS::NoValue]
       DeletionProtection: !If [ProtectCluster, true, false]
       CopyTagsToSnapshot: true
       ServerlessV2ScalingConfiguration:
@@ -179,7 +181,8 @@ Resources:
       Engine: aurora-postgresql
       PubliclyAccessible: !If [MakePublic, true, false]
       EnablePerformanceInsights: !If [UsePerformanceInsights, true, false]
-      PerformanceInsightsRetentionPeriod: !If [UsePerformanceInsights, 7, !Ref 'AWS::NoValue']
+      PerformanceInsightsRetentionPeriod:
+        !If [UsePerformanceInsights, 7, !Ref 'AWS::NoValue']
       AutoMinorVersionUpgrade: true
       CACertificateIdentifier: rds-ca-rsa2048-g1
       Tags:
