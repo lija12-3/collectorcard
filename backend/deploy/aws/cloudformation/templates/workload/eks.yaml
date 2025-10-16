@@ -142,7 +142,7 @@ Resources:
         - !ImportValue
           Fn::Sub: ${NetworkStackName}-PrivateSubnet1Id
         - !ImportValue
-          Fn::Sub: ${NetworkStackName}-PrivateSubnet1Id
+          Fn::Sub: ${NetworkStackName}-PrivateSubnet2Id
     DependsOn: EKSCluster
 
   EKSSampleFargateProfile:
