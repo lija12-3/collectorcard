@@ -1,6 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { KMSClient, EncryptCommand, DecryptCommand, GenerateDataKeyCommand } from '@aws-sdk/client-kms';
-import { SecretsManagerClient, GetSecretValueCommand, CreateSecretCommand, UpdateSecretCommand } from '@aws-sdk/client-secrets-manager';
+import {
+  KMSClient,
+  EncryptCommand,
+  DecryptCommand,
+  GenerateDataKeyCommand,
+} from '@aws-sdk/client-kms';
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+  CreateSecretCommand,
+  UpdateSecretCommand,
+} from '@aws-sdk/client-secrets-manager';
 
 @Injectable()
 export class KeystoreService {
@@ -21,7 +31,9 @@ export class KeystoreService {
       });
 
       const result = await this.kmsClient.send(command);
-      return Buffer.from(result.CiphertextBlob || new Uint8Array()).toString('base64');
+      return Buffer.from(result.CiphertextBlob || new Uint8Array()).toString(
+        'base64',
+      );
     } catch (error) {
       throw new Error(`Failed to encrypt data with KMS: ${error.message}`);
     }
@@ -52,8 +64,12 @@ export class KeystoreService {
 
       const result = await this.kmsClient.send(command);
       return {
-        plaintext: Buffer.from(result.Plaintext || new Uint8Array()).toString('base64'),
-        ciphertext: Buffer.from(result.CiphertextBlob || new Uint8Array()).toString('base64'),
+        plaintext: Buffer.from(result.Plaintext || new Uint8Array()).toString(
+          'base64',
+        ),
+        ciphertext: Buffer.from(
+          result.CiphertextBlob || new Uint8Array(),
+        ).toString('base64'),
       };
     } catch (error) {
       throw new Error(`Failed to generate data key: ${error.message}`);
@@ -93,10 +109,7 @@ export class KeystoreService {
     }
   }
 
-  async updateSecret(
-    secretName: string,
-    secretValue: string,
-  ): Promise<string> {
+  async updateSecret(secretName: string, secretValue: string): Promise<string> {
     try {
       const command = new UpdateSecretCommand({
         SecretId: secretName,
@@ -135,7 +148,7 @@ export class KeystoreService {
 
   async getAndDecryptSecret(
     secretName: string,
-    keyId: string,
+    _keyId: string,
   ): Promise<string> {
     try {
       const encryptedValue = await this.getSecret(secretName);

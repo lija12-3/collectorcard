@@ -15,12 +15,12 @@ spec:
         - name: socat
           image: alpine/socat:1.8.0.0
           args:
-            - "TCP-LISTEN:3306,fork,reuseaddr"
-            - "TCP:collectors-card-aurora.cluster-c2xa6kcmi3f4.us-east-1.rds.amazonaws.com:3306"
-          command: ["socat","-d","-d","-v"]
+            - 'TCP-LISTEN:3306,fork,reuseaddr'
+            - 'TCP:collectors-card-aurora.cluster-c2xa6kcmi3f4.us-east-1.rds.amazonaws.com:3306'
+          command: ['socat', '-d', '-d', '-v']
           ports: [{ containerPort: 3306, name: pg }]
           resources:
-            requests: { cpu: "250m", memory: "512Mi" }
+            requests: { cpu: '250m', memory: '512Mi' }
 ---
 apiVersion: v1
 kind: Service

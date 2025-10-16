@@ -1,5 +1,5 @@
 // Custom auth flow state machine
-import type { Handler } from "aws-lambda";
+import type { Handler } from 'aws-lambda';
 
 export const handler: Handler = async (event: any) => {
   const session = event.request.session || [];
@@ -9,12 +9,16 @@ export const handler: Handler = async (event: any) => {
   if (session.length === 0) {
     event.response.issueTokens = false;
     event.response.failAuthentication = false;
-    event.response.challengeName = "CUSTOM_CHALLENGE";
+    event.response.challengeName = 'CUSTOM_CHALLENGE';
     return event;
   }
 
   // if previous CUSTOM_CHALLENGE was successful → issue tokens
-  if (last && last.challengeName === "CUSTOM_CHALLENGE" && last.challengeResult === true) {
+  if (
+    last &&
+    last.challengeName === 'CUSTOM_CHALLENGE' &&
+    last.challengeResult === true
+  ) {
     event.response.issueTokens = true;
     event.response.failAuthentication = false;
     return event;
@@ -27,7 +31,7 @@ export const handler: Handler = async (event: any) => {
   } else {
     event.response.issueTokens = false;
     event.response.failAuthentication = false;
-    event.response.challengeName = "CUSTOM_CHALLENGE";
+    event.response.challengeName = 'CUSTOM_CHALLENGE';
   }
   return event;
 };

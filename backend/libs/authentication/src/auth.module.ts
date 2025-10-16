@@ -24,7 +24,7 @@ export class AuthModule {
         JwtModule.register({
           secret: options.config.jwtSecret,
           signOptions: {
-            expiresIn: options.config.jwtExpiresIn,
+            expiresIn: options.config.jwtExpiresIn as any,
           },
         }),
       ],
@@ -40,18 +40,14 @@ export class AuthModule {
         JwtService,
         {
           provide: EncryptionService,
-          useFactory: (encryptionKey: string) => new EncryptionService(encryptionKey),
+          useFactory: (encryptionKey: string) =>
+            new EncryptionService(encryptionKey),
           inject: ['EncryptionKey'],
         },
         AccessTokenGuard,
         RolesGuard,
       ],
-      exports: [
-        JwtService,
-        EncryptionService,
-        AccessTokenGuard,
-        RolesGuard,
-      ],
+      exports: [JwtService, EncryptionService, AccessTokenGuard, RolesGuard],
     };
   }
 

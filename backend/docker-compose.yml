@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: cc_user
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,7 +21,7 @@ services:
     image: redis:7-alpine
     container_name: cc-redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -39,7 +39,7 @@ services:
       - DATABASE_URL=postgresql://cc_user:${DATABASE_PASSWORD}@postgres:5432/postgres
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3001:3000"
+      - '3001:3000'
     depends_on:
       - postgres
       - redis

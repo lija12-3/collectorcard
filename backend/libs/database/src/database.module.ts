@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseConfigService } from './config/database.config';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forRootAsync({
+    MikroOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const dbConfig = new DatabaseConfigService(configService);
-        return dbConfig.createTypeOrmOptions();
+        return dbConfig.createMikroOrmOptions();
       },
       inject: [ConfigService],
     }),

@@ -1,7 +1,7 @@
-import type { Handler } from "aws-lambda";
-import { newCode, newLinkToken, putCode, sendMagicLinkEmail } from "./shared";
+import type { Handler } from 'aws-lambda';
+import { newCode, newLinkToken, putCode, sendMagicLinkEmail } from './shared';
 
-const BASE = process.env.MAGIC_LINK_BASE_URL || "myapp://magic";
+const BASE = process.env.MAGIC_LINK_BASE_URL || 'myapp://magic';
 
 /**
  * Sends a magic link via SES and stores code+token in DynamoDB (TTL 10 min).
@@ -9,7 +9,7 @@ const BASE = process.env.MAGIC_LINK_BASE_URL || "myapp://magic";
  * Private params hold the correct answer for non-link verification.
  */
 export const handler: Handler = async (event: any) => {
-  if (event.request.challengeName !== "CUSTOM_CHALLENGE") return event;
+  if (event.request.challengeName !== 'CUSTOM_CHALLENGE') return event;
 
   const email = event.request.userAttributes.email || event.userName;
   const code = newCode();
@@ -19,14 +19,14 @@ export const handler: Handler = async (event: any) => {
   await putCode(linkToken, event.userName, 600);
   await putCode(code, event.userName, 600);
 
-  const linkUrl = BASE.includes("://")
+  const linkUrl = BASE.includes('://')
     ? `${BASE}?code=${encodeURIComponent(linkToken)}`
     : `${BASE}/auth/magic/consume?code=${encodeURIComponent(linkToken)}`;
 
   await sendMagicLinkEmail(email, linkUrl, code);
 
-  event.response.publicChallengeParameters = { delivery: "email" };
+  event.response.publicChallengeParameters = { delivery: 'email' };
   event.response.privateChallengeParameters = { answer: code, linkToken };
-  event.response.challengeMetadata = "MAGIC_LINK";
+  event.response.challengeMetadata = 'MAGIC_LINK';
   return event;
 };

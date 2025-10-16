@@ -29,20 +29,26 @@ export class LoggingInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap({
-        next: (data) => {
+        next: _data => {
           const duration = Date.now() - startTime;
-          this.logger.log(`Outgoing Response: ${method} ${url} - ${response.statusCode}`, {
-            duration: `${duration}ms`,
-            statusCode: response.statusCode,
-          });
+          this.logger.log(
+            `Outgoing Response: ${method} ${url} - ${response.statusCode}`,
+            {
+              duration: `${duration}ms`,
+              statusCode: response.statusCode,
+            },
+          );
         },
-        error: (error) => {
+        error: error => {
           const duration = Date.now() - startTime;
-          this.logger.error(`Request Error: ${method} ${url} - ${error.message}`, {
-            duration: `${duration}ms`,
-            error: error.message,
-            stack: error.stack,
-          });
+          this.logger.error(
+            `Request Error: ${method} ${url} - ${error.message}`,
+            {
+              duration: `${duration}ms`,
+              error: error.message,
+              stack: error.stack,
+            },
+          );
         },
       }),
     );
@@ -50,16 +56,22 @@ export class LoggingInterceptor implements NestInterceptor {
 
   private sanitizeBody(body: any): any {
     if (!body) return body;
-    
+
     const sanitized = { ...body };
-    const sensitiveFields = ['password', 'token', 'secret', 'key', 'authorization'];
-    
+    const sensitiveFields = [
+      'password',
+      'token',
+      'secret',
+      'key',
+      'authorization',
+    ];
+
     sensitiveFields.forEach(field => {
       if (sanitized[field]) {
         sanitized[field] = '[REDACTED]';
       }
     });
-    
+
     return sanitized;
   }
 }

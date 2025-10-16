@@ -1,7 +1,12 @@
 import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
-import { LogLevel, LogContext, LogEntry, LoggerConfig } from './interfaces/logger.interface';
+import {
+  LogLevel,
+  LogContext,
+  LogEntry,
+  LoggerConfig,
+} from './interfaces/logger.interface';
 
 @Injectable()
 export class AppLoggerService implements NestLoggerService {

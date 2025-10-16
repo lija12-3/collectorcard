@@ -11,18 +11,20 @@ const entries = [
   ['verifyAuthChallenge', 'apps/lambdas/src/verify-auth-challenge.ts'],
 ];
 
-await Promise.all(entries.map(([name, entry]) =>
-  build({
-    entryPoints: [entry],
-    outfile: `dist/lambdas/${name}.js`,
-    bundle: true,
-    platform: 'node',
-    target: 'node20',
-    external: [], // all sdk v3 gets bundled
-    sourcemap: false,
-    format: 'cjs',
-    minify: true
-  })
-));
+await Promise.all(
+  entries.map(([name, entry]) =>
+    build({
+      entryPoints: [entry],
+      outfile: `dist/lambdas/${name}.js`,
+      bundle: true,
+      platform: 'node',
+      target: 'node20',
+      external: [], // all sdk v3 gets bundled
+      sourcemap: false,
+      format: 'cjs',
+      minify: true,
+    }),
+  ),
+);
 
 console.log('Lambdas built to dist/lambdas/*.js');

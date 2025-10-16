@@ -3,7 +3,7 @@ const webpack = require('webpack');
 
 module.exports = {
   mode: 'production',
-  entry: './src/index.ts',
+  entry: './apps/api/src/main.ts',
   target: 'node',
   externals: {
     'aws-sdk': 'aws-sdk',

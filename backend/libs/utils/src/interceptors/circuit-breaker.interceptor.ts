@@ -10,7 +10,10 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
-import { CIRCUIT_BREAKER_METADATA, CircuitBreakerOptions } from '../decorators/circuit-breaker.decorator';
+import {
+  CIRCUIT_BREAKER_METADATA,
+  CircuitBreakerOptions,
+} from '../decorators/circuit-breaker.decorator';
 
 interface CircuitState {
   state: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
@@ -42,24 +45,33 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
     if (this.isCircuitOpen(circuit)) {
       this.logger.warn(`Circuit breaker is OPEN for ${methodName}`);
       return throwError(
-        () => new HttpException('Service temporarily unavailable', HttpStatus.SERVICE_UNAVAILABLE),
+        () =>
+          new HttpException(
+            'Service temporarily unavailable',
+            HttpStatus.SERVICE_UNAVAILABLE,
+          ),
       );
     }
 
     return next.handle().pipe(
-      catchError((error) => {
+      catchError(error => {
         this.recordFailure(circuit, options);
-        this.logger.error(`Circuit breaker recorded failure for ${methodName}: ${error.message}`);
+        this.logger.error(
+          `Circuit breaker recorded failure for ${methodName}: ${error.message}`,
+        );
         return throwError(() => error);
       }),
-      switchMap((data) => {
+      switchMap(data => {
         this.recordSuccess(circuit);
         return [data];
       }),
     );
   }
 
-  private getOrCreateCircuit(methodName: string, options: CircuitBreakerOptions): CircuitState {
+  private getOrCreateCircuit(
+    methodName: string,
+    _options: CircuitBreakerOptions,
+  ): CircuitState {
     if (!this.circuits.has(methodName)) {
       this.circuits.set(methodName, {
         state: 'CLOSED',
@@ -80,14 +92,19 @@ export class CircuitBreakerInterceptor implements NestInterceptor {
     return false;
   }
 
-  private recordFailure(circuit: CircuitState, options: CircuitBreakerOptions): void {
+  private recordFailure(
+    circuit: CircuitState,
+    options: CircuitBreakerOptions,
+  ): void {
     circuit.failureCount++;
     circuit.lastFailureTime = new Date();
 
     if (circuit.failureCount >= options.failureThreshold!) {
       circuit.state = 'OPEN';
       circuit.nextAttemptTime = new Date(Date.now() + options.resetTimeout!);
-      this.logger.warn(`Circuit breaker opened after ${circuit.failureCount} failures`);
+      this.logger.warn(
+        `Circuit breaker opened after ${circuit.failureCount} failures`,
+      );
     }
   }
 

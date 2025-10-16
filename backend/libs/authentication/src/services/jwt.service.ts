@@ -19,8 +19,8 @@ export class JwtService {
       tokenType,
     };
 
-    return this.jwtService.sign(payload, {
-      expiresIn: expiresIn || '1h',
+    return this.jwtService.sign(payload as any, {
+      expiresIn: (expiresIn || '1h') as any,
     });
   }
 

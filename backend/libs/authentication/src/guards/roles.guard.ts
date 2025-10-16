@@ -5,8 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '../types/auth.types';
-import { IRequest } from '../types/auth.types';
+import { Role, IRequest } from '../types/auth.types';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -29,7 +28,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    const hasRole = requiredRoles.some((role) => user.userroles?.includes(role));
+    const hasRole = requiredRoles.some(role => user.userroles?.includes(role));
 
     if (!hasRole) {
       throw new ForbiddenException('Insufficient permissions');

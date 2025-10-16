@@ -53,7 +53,7 @@ Resources:
       Name: !Ref SubdomainName
       Type: !Ref PrimaryRecordType
       TTL: !Ref PrimaryRecordTTL
-      ResourceRecords: !Split [",", !Ref PrimaryRecordValues]
+      ResourceRecords: !Split [',', !Ref PrimaryRecordValues]
 
 Outputs:
   HostedZoneId:
@@ -63,7 +63,7 @@ Outputs:
       Name: !Sub ${ProjectName}:DelegatedHostedZoneId
   NameServers:
     Description: Route53 name servers for delegation (add these as NS records with the registrar).
-    Value: !Join [",", !GetAtt DelegatedHostedZone.NameServers]
+    Value: !Join [',', !GetAtt DelegatedHostedZone.NameServers]
   HostedZoneName:
     Description: Delegated zone name.
     Value: !Ref SubdomainName

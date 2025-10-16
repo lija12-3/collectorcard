@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SQSClient, SendMessageCommand, ReceiveMessageCommand, DeleteMessageCommand, GetQueueUrlCommand } from '@aws-sdk/client-sqs';
+import {
+  SQSClient,
+  SendMessageCommand,
+  ReceiveMessageCommand,
+  DeleteMessageCommand,
+  GetQueueUrlCommand,
+} from '@aws-sdk/client-sqs';
 
 export interface SQSMessage {
   id: string;
@@ -60,7 +66,7 @@ export class SQSService {
       });
 
       const result = await this.sqsClient.send(command);
-      
+
       return (result.Messages || []).map(message => ({
         id: message.MessageId || '',
         body: message.Body || '',
@@ -100,7 +106,11 @@ export class SQSService {
 
   async sendBatchMessages(
     queueUrl: string,
-    messages: Array<{ id: string; body: string; messageAttributes?: Record<string, any> }>,
+    messages: Array<{
+      id: string;
+      body: string;
+      messageAttributes?: Record<string, any>;
+    }>,
   ): Promise<{ successful: string[]; failed: string[] }> {
     const successful: string[] = [];
     const failed: string[] = [];

@@ -8,7 +8,10 @@ import {
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
-import { CACHE_KEY_METADATA, CACHE_TTL_METADATA } from '../decorators/cache.decorator';
+import {
+  CACHE_KEY_METADATA,
+  CACHE_TTL_METADATA,
+} from '../decorators/cache.decorator';
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
@@ -18,8 +21,14 @@ export class CacheInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const cacheKey = this.reflector.get<string>(CACHE_KEY_METADATA, context.getHandler());
-    const cacheTTL = this.reflector.get<number>(CACHE_TTL_METADATA, context.getHandler());
+    const cacheKey = this.reflector.get<string>(
+      CACHE_KEY_METADATA,
+      context.getHandler(),
+    );
+    const cacheTTL = this.reflector.get<number>(
+      CACHE_TTL_METADATA,
+      context.getHandler(),
+    );
 
     if (!cacheKey || !cacheTTL) {
       return next.handle();
@@ -38,7 +47,7 @@ export class CacheInterceptor implements NestInterceptor {
     this.logger.log(`Cache miss for key: ${fullCacheKey}`);
 
     return next.handle().pipe(
-      tap((data) => {
+      tap(data => {
         // Store in cache
         this.cache.set(fullCacheKey, {
           data,

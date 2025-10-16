@@ -34,11 +34,13 @@ export class EncryptionService {
         throw new Error('Invalid encrypted text format');
       }
 
-      const iv = Buffer.from(parts[0], 'hex');
       const tag = Buffer.from(parts[1], 'hex');
       const encrypted = parts[2];
 
-      const decipher = crypto.createDecipher(this.algorithm, this.encryptionKey);
+      const decipher = crypto.createDecipher(
+        this.algorithm,
+        this.encryptionKey,
+      );
       decipher.setAAD(Buffer.from('collectors-card-auth', 'utf8'));
       decipher.setAuthTag(tag);
 
