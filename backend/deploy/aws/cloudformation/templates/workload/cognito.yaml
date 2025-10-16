@@ -98,6 +98,12 @@ Resources:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref PreAuthS3Key
 
+  PreAuthenticationFnLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ProjectName}-pre-authentication
+      RetentionInDays: 30
+
   PreTokenGenerationFn:
     Type: AWS::Lambda::Function
     Properties:
@@ -110,6 +116,12 @@ Resources:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref PreTokenGenS3Key
 
+  PreTokenGenerationFnLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ProjectName}-pre-token-generation
+      RetentionInDays: 30
+
   DefineAuthChallengeFn:
     Type: AWS::Lambda::Function
     Properties:
@@ -121,6 +133,12 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref DefineChallengeS3Key
+
+  DefineAuthChallengeFnLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ProjectName}-define-auth-challenge
+      RetentionInDays: 30
 
   CreateAuthChallengeFn:
     Type: AWS::Lambda::Function
@@ -140,6 +158,12 @@ Resources:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref CreateChallengeS3Key
 
+  CreateAuthChallengeFnLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ProjectName}-create-auth-challenge
+      RetentionInDays: 30
+
   VerifyAuthChallengeFn:
     Type: AWS::Lambda::Function
     Properties:
@@ -154,6 +178,12 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref VerifyChallengeS3Key
+
+  VerifyAuthChallengeFnLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ProjectName}-verify-auth-challenge
+      RetentionInDays: 30
 
   UserPool:
     Type: AWS::Cognito::UserPool

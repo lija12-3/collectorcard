@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurora-tcp-proxy
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: aurora-tcp-proxy }
+  template:
+    metadata:
+      labels: { app: aurora-tcp-proxy }
+    spec:
+      containers:
+        - name: socat
+          image: alpine/socat:1.8.0.0
+          args:
+            - "TCP-LISTEN:3306,fork,reuseaddr"
+            - "TCP:collectors-card-aurora.cluster-c2xa6kcmi3f4.us-east-1.rds.amazonaws.com:3306"
+          command: ["socat","-d","-d","-v"]
+          ports: [{ containerPort: 3306, name: pg }]
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aurora-tcp-proxy
+  namespace: default
+spec:
+  selector: { app: aurora-tcp-proxy }
+  ports:
+    - name: pg
+      port: 3306
+      targetPort: 3306
