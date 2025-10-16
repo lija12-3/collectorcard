@@ -174,3 +174,5 @@ coverage/
 
 # Local configuration
 local.properties
+docs/database-connection-guide.md
+docs/database-migration-guide.md

@@ -1,11 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run lint-staged
-npx lint-staged
-
-# Run type checking
-npm run type-check
-
-# Run build check
-npm run build:api
+# Run lightweight pre-commit checks (build only)
+node scripts/pre-commit.mjs

@@ -24,6 +24,7 @@ export class Migration20251015162916UpdateUserEntityStructure extends Migration 
       `alter table "user_history" add constraint "user_history_user_user_id_foreign" foreign key ("user_user_id") references "user_master" ("user_id") on update cascade;`,
     );
 
+    // Drop old users table if it exists
     this.addSql(`drop table if exists "users" cascade;`);
   }
 

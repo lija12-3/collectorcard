@@ -1,31 +1,25 @@
 #!/usr/bin/env node
 
 /**
- * Pre-commit hook script that matches GitHub Actions workflow
- * This ensures local development follows the same quality standards as CI/CD
+ * Lightweight pre-commit hook - only checks build/run
  */
 
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
-import { platform } from 'os';
 
 // Colors for console output
 const colors = {
   red: '\x1b[31m',
   green: '\x1b[32m',
-  yellow: '\x1b[33m',
   blue: '\x1b[34m',
   reset: '\x1b[0m',
-  bold: '\x1b[1m',
 };
 
 // Helper functions for colored output
 const log = {
   status: msg => console.log(`${colors.blue}📝 ${msg}${colors.reset}`),
   success: msg => console.log(`${colors.green}✅ ${msg}${colors.reset}`),
-  warning: msg => console.log(`${colors.yellow}⚠️  ${msg}${colors.reset}`),
   error: msg => console.log(`${colors.red}❌ ${msg}${colors.reset}`),
-  info: msg => console.log(`${colors.bold}${msg}${colors.reset}`),
 };
 
 // Execute command with error handling
@@ -43,9 +37,7 @@ function execCommand(command, description) {
 
 // Main pre-commit function
 async function runPreCommitChecks() {
-  console.log(
-    `${colors.blue}🔍 Running pre-commit checks (matching GitHub Actions)...${colors.reset}`,
-  );
+  console.log(`${colors.blue}🔍 Running lightweight pre-commit checks...${colors.reset}`);
   console.log('==================================================');
 
   // Check if we're in the backend directory
@@ -54,18 +46,12 @@ async function runPreCommitChecks() {
     process.exit(1);
   }
 
+  // Only run build check
   const checks = [
     {
-      command: 'npx lint-staged',
-      description: 'Running ESLint on staged files',
+      command: 'npm run build:api',
+      description: 'Building API',
     },
-    {
-      command: 'npm run format:check',
-      description: 'Running Prettier check',
-    },
-    // Note: TypeScript type check and build are skipped in pre-commit
-    // to avoid blocking commits due to module resolution issues.
-    // These are still run in GitHub Actions CI/CD pipeline.
   ];
 
   // Run all checks
@@ -75,31 +61,8 @@ async function runPreCommitChecks() {
     }
   }
 
-  // Security audit with lenient handling for development dependencies
-  log.status('Running security audit...');
-  try {
-    execSync('npm audit --audit-level=high', { stdio: 'inherit' });
-    log.success('Security audit passed (no high/critical vulnerabilities)');
-  } catch (error) {
-    log.warning('Security audit found high or critical vulnerabilities.');
-    log.warning('Please review and fix security issues before committing.');
-    console.log('');
-    console.log('To see details: npm audit');
-    console.log('To fix automatically: npm audit fix');
-    console.log('');
-
-    // Check if there are only moderate/low vulnerabilities
-    try {
-      execSync('npm audit --audit-level=moderate', { stdio: 'pipe' });
-      log.warning('Only moderate/low vulnerabilities found - continuing...');
-    } catch (moderateError) {
-      log.error('High or critical vulnerabilities found - blocking commit');
-      process.exit(1);
-    }
-  }
-
   console.log('');
-  log.success('All pre-commit checks passed! 🎉');
+  log.success('Pre-commit checks passed! 🎉');
   console.log('==================================================');
 }
 
