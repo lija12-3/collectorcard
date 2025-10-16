@@ -46,8 +46,8 @@ Parameters:
     Description: Enable deletion protection on the cluster.
   MinCapacity:
     Type: Number
-    Default: 0
-    MinValue: 0
+    Default: 0.5
+    MinValue: 0.5
     MaxValue: 128
     Description: Minimum ACU capacity for Serverless v2 (0.5 increments).
   MaxCapacity:
