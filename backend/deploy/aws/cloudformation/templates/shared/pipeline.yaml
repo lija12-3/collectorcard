@@ -1,0 +1,606 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS CloudFormation Template for CI/CD pipeline of collectors-card.
+Parameters:
+  ApplicationName:
+    Description: This will be used to name the pipeline and build resources
+    Type: String
+    AllowedPattern: "[A-Za-z0-9-]+"
+    Default: sample-service
+  GitHubOAuthTokenSecretName:
+    Description: >-
+      Create a token with 'repo' and 'admin:repo_hook' permissions here
+      https://github.com/settings/tokens
+    Type: String
+  GitHubRepositoryOwner:
+    Description: Enter GitHub username of the repository owner
+    Type: String
+  GitHubRepository:
+    Description: Enter the repository name that should be monitored for changes
+    Type: String
+    Default: sample-service
+  CloudFormationStackName:
+    Type: String
+    Description: The name of the CloudFormation stack to deploy
+    AllowedPattern: "[A-Za-z0-9-]+"
+    MinLength: 2
+    Default: sample-service
+  DevDeploymentTemplateParams:
+    Type: String
+    Description: The cloud formation template parameters for deploying to Dev Environment
+    MinLength: 2
+    Default: dev-params.json
+  StagingDeploymentTemplateParams:
+    Type: String
+    Description: >-
+      The cloud formation template parameters for deploying to Staging
+      Environment
+    MinLength: 2
+    Default: staging-params.json
+  ProdDeploymentTemplateParams:
+    Type: String
+    Description: >-
+      The cloud formation template parameters for deploying to Production
+      Environment
+    MinLength: 2
+    Default: production-params.json
+  ProductionAwsAccount:
+    Description: >-
+      The ID of the AWS account in which Production environments are
+      hosted
+    Type: String
+  NonProdAwsAccount:
+    Description: The ID of the AWS account in which dev and staging environments are hosted
+    Type: String
+  SnsStackName:
+    Description: SNS stack name
+    Type: String
+Mappings: {}
+Conditions: {}
+Resources:
+  ECRRepository: 
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: !Ref ApplicationName
+      ImageScanningConfiguration: 
+        ScanOnPush: true
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPullFromProdAWSAccount
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - !Sub 'arn:${AWS::Partition}:iam::${ProductionAwsAccount}:root'
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+          - 
+            Sid: AllowPullFromNonProdAWSAccount
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - !Sub 'arn:${AWS::Partition}:iam::${NonProdAwsAccount}:root'
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+          - Sid: LambdaECRImageRetrievalPolicy
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'ecr:BatchGetImage'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:GetRepositoryPolicy'
+          - Sid: AllowPullFromProdAWSAccountLambda
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${ProductionAwsAccount}:root'
+            Action:
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:BatchGetImage'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:GetRepositoryPolicy'
+          - Sid: AllowPullFromNonProdAWSAccountLambda
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${NonProdAwsAccount}:root'
+            Action:
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:BatchGetImage'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:GetRepositoryPolicy'
+  PipelineArtifactS3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Join
+        - "-"
+        - - pipeline
+          - !Ref ApplicationName
+      LifecycleConfiguration:
+        Rules:
+        - Id: delete-incomplete-mpu-7days 
+          Status: Enabled
+          Prefix: ''
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7 
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      RoleName: !Sub "${ApplicationName}-CodePipeline"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+  CodePipelineIAMPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: !Sub "${ApplicationName}-CodePipeline"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "cloudformation:CreateStack"
+              - "cloudformation:DeleteStack"
+              - "cloudformation:DescribeStacks"
+              - "cloudformation:UpdateStack"
+              - "cloudformation:CreateChangeSet"
+              - "cloudformation:DeleteChangeSet"
+              - "cloudformation:Describe*"
+              - "cloudformation:List*"
+              - "cloudformation:ExecuteChangeSet"
+              - "cloudformation:SetStackPolicy"
+              - "cloudformation:ValidateTemplate"
+              - "codepipeline:*"
+              - "iam:ListRoles"
+              - "iam:PassRole"
+              - "s3:*"
+            Resource: "*"
+            Effect: Allow
+          - Effect: Allow
+            Action:
+              - "kms:*"
+            Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+          - Action:
+              - "codebuild:BatchGetBuilds"
+              - "codebuild:StartBuild"
+            Resource: "*"
+            Effect: Allow
+          - Action:
+              - "sts:AssumeRole"
+            Resource: !Sub "arn:aws:iam::${NonProdAwsAccount}:role/non-prod-account-crossaccount-deployservices-role"
+            Effect: Allow
+          - Action:
+              - "sts:AssumeRole"
+            Resource: !Sub >-
+              arn:aws:iam::${ProductionAwsAccount}:role/production-account-crossaccount-deployservices-role
+            Effect: Allow
+      Roles:
+        - !Ref CodePipelineRole
+  CodeBuildRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      RoleName: !Sub "${ApplicationName}-CodeBuild"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+  CodeBuildIAMPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: !Sub "${ApplicationName}-CodeBuild"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource:
+              - "*"
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+          - Effect: Allow
+            Resource:
+              - !Join
+                - ""
+                - - "arn:aws:s3:::"
+                  - !Ref PipelineArtifactS3Bucket
+                  - /*
+            Action:
+              - "s3:GetObject"
+              - "s3:GetObjectVersion"
+              - "s3:PutObject"
+          - Effect: Allow
+            Resource:
+              - !Sub >-
+                arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:github-token-dxp-*
+            Action:
+              - "secretsmanager:GetSecretValue"
+          - Effect: Allow
+            Resource:
+              - '*'
+            Action:
+              - 'ecr:*'
+      Roles:
+        - !Ref CodeBuildRole
+  CloudFormationRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      RoleName: !Sub "${ApplicationName}-CloudFormation"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+      Policies:
+        - PolicyName: !Sub "${ApplicationName}-CloudFormation"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                  - cloudformation:*
+                Resource: "*"
+  CrossAccountKMSKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: Used by Assumed Roles in Dev/Prod accounts to Encrypt/Decrypt code
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: !Ref "AWS::StackName"
+        Statement:
+          - Sid: Allows admin of the key
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+          - Sid: Allow use of the key for Pipeline deployments
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${NonProdAwsAccount}:root"
+                - !Sub "arn:aws:iam::${ProductionAwsAccount}:root"
+                - !GetAtt
+                  - CodePipelineRole
+                  - Arn
+                - !GetAtt
+                  - CodeBuildRole
+                  - Arn
+                - !GetAtt
+                  - CloudFormationRole
+                  - Arn
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+  CrossAccountKMSAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: alias/sample-service-cp
+      TargetKeyId: !Ref CrossAccountKMSKey
+  CodeBuild:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${ApplicationName}"
+      Description: !Sub "Build project of ${ApplicationName} "
+      Artifacts:
+        Name: !Ref ApplicationName
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      EncryptionKey: !GetAtt
+        - CrossAccountKMSKey
+        - Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: build-config/buildspec.yml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: true
+        Image: "aws/codebuild/standard:7.0"
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: ECR_IMAGE_REPO_NAME
+            Type: PLAINTEXT
+            Value: !Ref ApplicationName
+  CodePipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Name: !Sub '${ApplicationName}-CodePipelineWebhook'
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Sub '{{resolve:secretsmanager:${GitHubOAuthTokenSecretName}::}}'
+      Filters:
+        -
+          JsonPath: "$.ref"
+          MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref CodePipeline
+      TargetAction: GitHub
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+      RegisterWithThirdParty: true
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub "${ApplicationName}"
+      RoleArn: !GetAtt
+        - CodePipelineRole
+        - Arn
+      RestartExecutionOnUpdate: true
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactS3Bucket
+        EncryptionKey:
+          Id: !GetAtt
+            - CrossAccountKMSKey
+            - Arn
+          Type: KMS
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: "1"
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: Source
+              Configuration:
+                Owner: !Ref GitHubRepositoryOwner
+                Repo: !Ref GitHubRepository
+                Branch: master
+                OAuthToken: !Sub "{{resolve:secretsmanager:${GitHubOAuthTokenSecretName}::}}"
+                PollForSourceChanges: false
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              InputArtifacts:
+                - Name: Source
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+              OutputArtifacts:
+                - Name: Built
+              Configuration:
+                ProjectName: !Ref CodeBuild
+        - Name: DevDeploy
+          Actions:
+            - Name: DeployInfrastructure
+              RunOrder: 1
+              InputArtifacts:
+                - Name: Built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: "1"
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !Sub >-
+                  arn:aws:iam::${NonProdAwsAccount}:role/non-prod-account-crossaccount-deployservices-role
+                Capabilities: "CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
+                StackName: !Sub "dev-${CloudFormationStackName}"
+                TemplatePath: "Built::.aws/cloudformation/template.yaml"
+                TemplateConfiguration: !Sub >-
+                  Built::.aws/cloudformation/config/${DevDeploymentTemplateParams}
+              RoleArn: !Sub "arn:aws:iam::${NonProdAwsAccount}:role/non-prod-account-crossaccount-deployservices-role"
+        - Name: StagingApproval
+          Actions:
+            - Name: StagingGate
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: "1"
+                Provider: Manual
+        - Name: StagingDeploy
+          Actions:
+            - Name: DeployInfrastructure
+              RunOrder: 1
+              InputArtifacts:
+                - Name: Built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: "1"
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !Sub >-
+                  arn:aws:iam::${NonProdAwsAccount}:role/non-prod-account-crossaccount-deployservices-role
+                Capabilities: "CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
+                StackName: !Sub "staging-${CloudFormationStackName}"
+                TemplatePath: "Built::.aws/cloudformation/template.yaml"
+                TemplateConfiguration: !Sub >-
+                  Built::.aws/cloudformation/config/${StagingDeploymentTemplateParams}
+              RoleArn: !Sub "arn:aws:iam::${NonProdAwsAccount}:role/non-prod-account-crossaccount-deployservices-role"
+        - Name: ProductionApproval
+          Actions:
+            - Name: ProductionGate
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: "1"
+                Provider: Manual
+        - Name: ProductionDeploy
+          Actions:
+            - Name: DeployInfrastructure
+              RunOrder: 1
+              InputArtifacts:
+                - Name: Built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: "1"
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !Sub >-
+                  arn:aws:iam::${ProductionAwsAccount}:role/production-account-crossaccount-deployservices-role
+                Capabilities: "CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
+                StackName: !Sub "production-${CloudFormationStackName}"
+                TemplatePath: "Built::.aws/cloudformation/template.yaml"
+                TemplateConfiguration: !Sub >-
+                  Built::.aws/cloudformation/config/${ProdDeploymentTemplateParams}
+              RoleArn: !Sub >-
+                arn:aws:iam::${ProductionAwsAccount}:role/production-account-crossaccount-deployservices-role
+  PipelineArtifactS3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref PipelineArtifactS3Bucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowSSLRequestsOnly
+            Action: "s3:*"
+            Effect: Deny
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref PipelineArtifactS3Bucket
+                  - /*
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref PipelineArtifactS3Bucket
+            Condition:
+              Bool:
+                "aws:SecureTransport": "false"
+            Principal: "*"
+          - Action:
+              - "s3:*"
+            Effect: Allow
+            Resource:
+              - !Join
+                - ""
+                - - "arn:aws:s3:::"
+                  - !Ref PipelineArtifactS3Bucket
+                  - /*
+              - !Join
+                - ""
+                - - "arn:aws:s3:::"
+                  - !Ref PipelineArtifactS3Bucket
+            Principal:
+              AWS:
+                - !Sub >-
+                  arn:aws:iam::${NonProdAwsAccount}:role/non-prod-account-crossaccount-deployservices-role
+                - !Sub >-
+                  arn:aws:iam::${ProductionAwsAccount}:role/production-account-crossaccount-deployservices-role
+                - !GetAtt
+                  - CodePipelineRole
+                  - Arn
+    DependsOn:
+      - CloudFormationRole
+  CodePipelineFailedEventRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: !Sub '${ApplicationName} pipeline failed events rule'
+      EventPattern:
+        source:
+          - aws.codepipeline
+        detail-type:
+          - CodePipeline Pipeline Execution State Change
+        detail:
+          state:
+            - FAILED
+          pipeline:
+            - !Ref CodePipeline
+          stage: 
+            - Source
+            - Build
+            - DevDeploy
+            - StagingDeploy
+            - ProductionDeploy
+      State: ENABLED
+      Targets:
+        - Arn: !ImportValue 
+            'Fn::Sub': '${SnsStackName}-DXPPipelineSNSTopicArn'
+          Id: !Sub '${ApplicationName}-PipelineNotifyTopic'
+          InputTransformer:
+            InputTemplate: !Sub
+              - |
+                {
+                   "version": "1.0",
+                   "source": "custom",
+                   "content": {
+                       "textType": "client-markdown",
+                       "title" : ":failed: <pipeline> CodePipeline Status",
+                       "description": "The Pipeline <pipeline> has *`<stage> <state>`* at <at>. Please check https://console.aws.amazon.com/codepipeline/home?region=${Region}#/view/<pipeline> to see details"
+                   }
+                }
+              - Region: !Sub "${AWS::Region}"
+            InputPathsMap:
+              pipeline: $.detail.pipeline
+              state: $.detail.state
+              at: $.time
+              stage: $.detail.stage
+  CodePipelineSucessEventRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: !Sub '${ApplicationName} pipeline succeded events rule'
+      EventPattern:
+        source:
+          - aws.codepipeline
+        detail-type:
+          - CodePipeline Pipeline Execution State Change
+        detail:
+          state:
+            - SUCCEEDED
+          pipeline:
+            - !Ref CodePipeline
+      State: ENABLED
+      Targets:
+        - Arn: !ImportValue 
+            'Fn::Sub': '${SnsStackName}-AipSNSTopicArn'
+          Id: !Sub '${ApplicationName}-PipelineNotificationTopic'
+          InputTransformer:
+            InputTemplate: !Sub
+              - |
+                {
+                   "version": "1.0",
+                   "source": "custom",
+                   "content": {
+                       "textType": "client-markdown",
+                       "title" : ":white_check_mark: <pipeline> CodePipeline Release Status",
+                       "description": "The Pipeline <pipeline> has <state> production release at <at>. Go to https://console.aws.amazon.com/codepipeline/home?region=${Region}#/view/<pipeline> to see details"
+                   }
+                }
+              - Region: !Sub "${AWS::Region}"
+            InputPathsMap:
+              pipeline: $.detail.pipeline
+              state: $.detail.state
+              at: $.time
+Outputs:
+  CodePipelineURL:
+    Description: The URL for the created pipeline
+    Value: !Sub >-
+      https://${AWS::Region}.console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${ApplicationName}
+  CrossAccountKMSKey:
+    Value: !GetAtt
+      - CrossAccountKMSKey
+      - Arn
+    Export:
+      Name: !Sub "${ApplicationName}-CrossAccountKMSKey"
