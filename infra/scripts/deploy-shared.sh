@@ -10,11 +10,8 @@ echo "🚀 Deploying Shared Artifacts Stack ($STACK_NAME) in Shared Services Acc
 aws cloudformation deploy \
   --stack-name $STACK_NAME \
   --template-file ../templates/shared-artifacts-stack.yaml \
-  --parameter-overrides \
-    SharedAccountId=782496497250 \
-    DevAccountId=068898927889 \
-    Region=$REGION \
-    BucketNamePrefix=shared-artifacts-collectorcard \
+  --parameter-overrides 
+    file://../parameters/shared-params.json \
   --capabilities CAPABILITY_NAMED_IAM \
   --region $REGION \
   --profile $PROFILE
