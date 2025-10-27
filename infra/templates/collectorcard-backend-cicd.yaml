@@ -1,12 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Description: >
-  Unified CI/CD pipeline using CodePipeline and CodeBuild for the Card Collectors project.
-  - Handles pushes to main and feat/CDEV-134_codepipeline branches.
-  - Runs CI (lint, test, build) for both branches.
-  - Deploys automatically for main (production).
-  - Feature branch builds run CI only (no deploy).
-  - Includes a weekly dependency check pipeline.
+  Backend CI/CD pipeline for the Card Collectors project.
+  Uses shared artifact bucket from the Shared Services account.
+  Runs CodePipeline and CodeBuild for backend app automation.
 
 # ---------------------------
 # PARAMETERS
@@ -14,12 +11,14 @@ Description: >
 Parameters:
   GitHubConnectionArn:
     Type: String
-    Description: ARN of an existing AWS CodeStar Connections connection for your GitHub account.
+    Description: ARN of an existing AWS CodeStar Connections connection for GitHub.
   RepoOwner:
     Type: String
-    Description: GitHub repository owner (user or org name).
+    Default: lija12-3
+    Description: GitHub repository owner (user or organization).
   RepoName:
     Type: String
+    Default: collectorcard
     Description: GitHub repository name.
   MainBranch:
     Type: String
@@ -29,6 +28,9 @@ Parameters:
     Type: String
     Default: feat/CDEV-134_codepipeline
     Description: Feature branch name for testing CodePipeline setup.
+  SharedArtifactBucket:
+    Type: String
+    Description: Artifact bucket name exported from Shared Services stack.
 
 # ---------------------------
 # RESOURCES
@@ -36,26 +38,14 @@ Parameters:
 Resources:
 
   # -------------------------------------
-  # S3 bucket to store pipeline artifacts
-  # -------------------------------------
-  ArtifactBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-  # -------------------------------------
   # IAM Role for CodePipeline
   # -------------------------------------
   PipelineRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: collectorcard-backend-pipeline-role
       AssumeRolePolicyDocument:
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -66,14 +56,14 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
         - arn:aws:iam::aws:policy/IAMReadOnlyAccess
       Policies:
-        - PolicyName: CodePipelineExtraPermissions
+        - PolicyName: PipelineCustomPermissions
           PolicyDocument:
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
-                  - codebuild:BatchGetProjects
                 Resource: '*'
 
   # -------------------------------------
@@ -82,20 +72,22 @@ Resources:
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: collectorcard-backend-codebuild-role
       AssumeRolePolicyDocument:
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
-      Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
       Policies:
-        - PolicyName: KubeCtlPermissionsOptional
+        - PolicyName: CodeBuildCustom
           PolicyDocument:
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -106,12 +98,12 @@ Resources:
                 Resource: '*'
 
   # -------------------------------------
-  # CodeBuild Project: Combined CI + CD Logic
+  # CodeBuild Project (Build + Deploy Logic)
   # -------------------------------------
   BackendBuildAndDeployProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: backend-build-deploy
+      Name: collectorcard-backend-build-deploy
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Artifacts:
         Type: CODEPIPELINE
@@ -134,7 +126,6 @@ Resources:
                 - echo "Installing dependencies..."
                 - cd backend
                 - npm ci
-
             pre_build:
               commands:
                 - echo "Detecting branch..."
@@ -142,28 +133,26 @@ Resources:
                 - BRANCH=$(echo $REF | sed 's|refs/heads/||')
                 - echo "Branch detected: $BRANCH"
                 - export BRANCH
-
             build:
               commands:
-                - echo "Running CI logic (lint, build, test)..."
+                - echo "Running lint, build, and tests..."
                 - npm run lint
                 - npm run type-check
                 - npm run build:api
                 - npm run build:lambdas
                 - npm run test --if-present
-                - echo "✅ CI completed successfully for branch: $BRANCH"
-
+                - echo "CI completed successfully for branch: $BRANCH"
             post_build:
               commands:
-                - echo "Running deployment logic (if applicable)..."
+                - echo "Running deployment logic..."
                 - |
                   if [[ "$BRANCH" == "main" ]]; then
-                    echo "🚀 Deploying to PRODUCTION..."
-                    # Add production deploy commands here (kubectl/helm/aws CLI)
+                    echo "Deploying to PRODUCTION..."
+                    # Add production deploy commands here
                   elif [[ "$BRANCH" == "feat/CDEV-134_codepipeline" ]]; then
-                    echo "🧪 Feature branch build only — skipping deploy."
+                    echo "Feature branch CI build only — skipping deploy."
                   else
-                    echo "⚠️ Unknown branch, skipping deploy."
+                    echo "Unknown branch, skipping deploy."
           artifacts:
             files:
               - backend/dist/**/*
@@ -171,7 +160,7 @@ Resources:
             discard-paths: no
 
   # -------------------------------------
-  # CodePipeline: Unified CI/CD
+  # CodePipeline Definition
   # -------------------------------------
   BackendPipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -179,11 +168,11 @@ Resources:
       RoleArn: !GetAtt PipelineRole.Arn
       ArtifactStore:
         Type: S3
-        Location: !Ref ArtifactBucket
+        Location: !Ref SharedArtifactBucket
       Stages:
         - Name: Source
           Actions:
-            - Name: GitHub_Source
+            - Name: GitHubSource
               ActionTypeId:
                 Category: Source
                 Owner: AWS
@@ -208,93 +197,14 @@ Resources:
               Configuration:
                 ProjectName: !Ref BackendBuildAndDeployProject
 
-  # -------------------------------------
-  # Simplified Dependency Checker (optional for now)
-  # -------------------------------------
-  DependencyPipeline:
-    Type: AWS::CodePipeline::Pipeline
-    Properties:
-      RoleArn: !GetAtt PipelineRole.Arn
-      ArtifactStore:
-        Type: S3
-        Location: !Ref ArtifactBucket
-      Stages:
-        - Name: Source
-          Actions:
-            - Name: DependencySource
-              ActionTypeId:
-                Category: Source
-                Owner: AWS
-                Provider: CodeStarSourceConnection
-                Version: 1
-              OutputArtifacts:
-                - Name: DependencySourceOutput
-              Configuration:
-                ConnectionArn: !Ref GitHubConnectionArn
-                FullRepositoryId: !Sub "${RepoOwner}/${RepoName}"
-                BranchName: !Ref FeatureBranch
-        - Name: DependencyAudit
-          Actions:
-            - Name: AuditAction
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: 1
-              InputArtifacts:
-                - Name: DependencySourceOutput
-              Configuration:
-                ProjectName: !Ref BackendBuildAndDeployProject
-
-  # -------------------------------------
-  # EventBridge Rule: Weekly Dependency Check
-  # -------------------------------------
-  WeeklyDependencyRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: weekly-dependency-check
-      ScheduleExpression: cron(0 0 ? * MON *) # every Monday at 00:00 UTC
-      State: ENABLED
-      Targets:
-        - Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${DependencyPipeline}
-          Id: StartDependencyPipeline
-          RoleArn: !GetAtt EventsInvokeRole.Arn
-
-  # -------------------------------------
-  # IAM Role for EventBridge
-  # -------------------------------------
-  EventsInvokeRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: AllowStartPipeline
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - codepipeline:StartPipelineExecution
-                Resource: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${DependencyPipeline}
-
 # ---------------------------
 # OUTPUTS
 # ---------------------------
 Outputs:
-  ArtifactBucketName:
-    Description: Name of the S3 bucket for pipeline artifacts
-    Value: !Ref ArtifactBucket
   BackendPipelineName:
-    Description: Name of unified CI/CD pipeline
+    Description: Name of the backend CI/CD pipeline
     Value: !Ref BackendPipeline
-  DependencyPipelineName:
-    Description: Name of dependency-check pipeline
-    Value: !Ref DependencyPipeline
   CodeBuildProjectName:
-    Description: Combined CI/CD CodeBuild project
+    Description: Backend CodeBuild project name
     Value: !Ref BackendBuildAndDeployProject
+

@@ -19,7 +19,6 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
-  # Cross-account access to Development account
   ArtifactBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -61,12 +60,7 @@ Resources:
               }
             ]
           }
-
-  ECRRepositoryPolicy:
-    Type: AWS::ECR::RepositoryPolicy
-    Properties:
-      RepositoryName: !Ref BackendECR
-      PolicyText:
+      RepositoryPolicyText:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
@@ -86,6 +80,7 @@ Outputs:
     Value: !Ref ArtifactBucket
     Export:
       Name: SharedArtifactBucket
+
   ECRRepositoryUri:
     Value: !GetAtt BackendECR.RepositoryUri
     Export:

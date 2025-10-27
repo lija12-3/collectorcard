@@ -16,7 +16,13 @@
     "ParameterValue": "main"
   },
   {
-    "ParameterKey": "DevelopBranch",
+    "ParameterKey": "FeatureBranch",
     "ParameterValue": "feat/CDEV-134_codepipeline"
+  },
+  {
+   
+    "ParameterKey": "SharedArtifactBucket",
+    "ParameterValue": "card-collector-artifacts-782496497250"
   }
+  
 ]
