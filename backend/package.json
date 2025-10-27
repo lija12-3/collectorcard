@@ -7,7 +7,7 @@
   "scripts": {
     "build:lambdas": "node scripts/build-lambdas.mjs",
     "zip:lambdas": "mkdir -p dist/zips && cd dist/lambdas && for f in *.js; do zip -j ../zips/${f%.js}.zip $f; done",
-    "build:api": "tsc -p apps/api/tsconfig.json",
+    "build:api": "tsc -p tsconfig.json",
     "start:api": "node apps/api/dist/main.js",
     "start:api:dev": "nest start api --watch",
     "build:api:dev": "nest build api",
