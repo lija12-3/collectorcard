@@ -1,33 +1,96 @@
 AWSTemplateFormatVersion: '2010-09-09'
-
 Description: >
-  Development stack for Card Collector backend CI/CD pipeline.
-  Uses shared artifact bucket from Shared Services account (same region).
-  Includes EventBridge rule to trigger dependency check weekly.
+  Reusable CloudFormation template for Card Collector project.
+  Can deploy either Shared Services (artifact bucket) or Development (pipeline + build)
+  based on the EnvironmentType parameter.
 
 Parameters:
+  EnvironmentType:
+    Type: String
+    AllowedValues:
+      - Shared
+      - Development
+    Description: Specify whether this is a Shared or Development stack.
+  SharedAccountId:
+    Type: String
+    Description: AWS Account ID for Shared Services (artifact bucket).
   DevAccountId:
     Type: String
+    Description: AWS Account ID for Development account (pipeline + builds).
   RepoOwner:
     Type: String
+    Default: lija12-3
   RepoName:
     Type: String
+    Default: collectorcard
   GitHubConnectionArn:
     Type: String
-  SharedArtifactBucket:
+    Default: ""
+  SharedArtifactBucketName:
     Type: String
+    Default: ""
   MainBranch:
     Type: String
+    Default: main
   DevelopBranch:
     Type: String
+    Default: develop
   FeatureBranch:
     Type: String
+    Default: feat/dev
+  Region:
+    Type: String
+    Default: us-east-1
+
+Conditions:
+  IsShared: !Equals [!Ref EnvironmentType, "Shared"]
+  IsDevelopment: !Equals [!Ref EnvironmentType, "Development"]
 
 Resources:
+  #########################################
+  # SHARED SERVICES RESOURCES
+  #########################################
+  SharedArtifactBucket:
+    Condition: IsShared
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "shared-artifacts-card-collector-${Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  SharedArtifactBucketPolicy:
+    Condition: IsShared
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SharedArtifactBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowDevAccountAccess
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${DevAccountId}:root"
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${SharedArtifactBucket}"
+              - !Sub "arn:aws:s3:::${SharedArtifactBucket}/*"
+
+  #########################################
+  # DEVELOPMENT ACCOUNT RESOURCES
+  #########################################
   PipelineRole:
+    Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
-      RoleName: collectorcard-backend-pipeline-role
+      RoleName: collectorcard-pipeline-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -35,8 +98,6 @@ Resources:
             Principal:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
       Policies:
         - PolicyName: CrossAccountS3Access
           PolicyDocument:
@@ -46,16 +107,21 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
-                  - s3:GetBucketLocation
                   - s3:ListBucket
                 Resource:
-                  - !Sub "arn:aws:s3:::${SharedArtifactBucket}"
-                  - !Sub "arn:aws:s3:::${SharedArtifactBucket}/*"
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}"
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: "*"
 
   CodeBuildRole:
+    Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
-      RoleName: collectorcard-backend-codebuild-role
+      RoleName: collectorcard-codebuild-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -66,54 +132,12 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
 
   BackendBuildProject:
+    Condition: IsDevelopment
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: collectorcard-build-deploy
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        ComputeType: BUILD_GENERAL1_MEDIUM
-        Image: aws/codebuild/standard:7.0
-        Type: LINUX_CONTAINER
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                nodejs: 20
-              commands:
-                - cd backend
-                - npm ci
-            build:
-              commands:
-                - echo "Running lint,build, and tests..."
-                - npm run lint
-                - npm run format:check
-                - npm run type-check
-                - npm audit --audit-level=high || true
-                - npm run build:api
-                - npm run build:lambdas
-                - npm run test --if-present
-            post_build:
-              commands:
-                - |
-                  if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == "refs/heads/${MainBranch}" ]]; then
-                    echo "Deploying to PRODUCTION..."
-                  elif [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == "refs/heads/${DevelopBranch}" ]]; then
-                    echo "Deploying to STAGING..."
-                  else
-                    echo "Feature branch detected — skipping deploy."
-
-  DependencyCheckProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: collectorcard-dependency-check
+      Name: collectorcard-build
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
         Type: CODEPIPELINE
@@ -134,83 +158,35 @@ Resources:
                 - npm ci
             build:
               commands:
-                - npm outdated || true
-                - npm audit --json > audit-report.json || true
-
-  # --------------------------------------------------------
-  # EventBridge Rule to trigger weekly dependency check
-  # --------------------------------------------------------
-  WeeklyDependencyCheckRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: collectorcard-weekly-dependency-check
-      Description: "Triggers the DependencyCheckProject every Monday at midnight UTC"
-      ScheduleExpression: cron(0 0 ? * MON *)   # every Monday 00:00 UTC
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt DependencyCheckProject.Arn
-          Id: "DependencyCheckTarget"
-          RoleArn: !GetAtt EventInvokeRole.Arn
-
-  # IAM role that allows EventBridge to start the CodeBuild project
-  EventInvokeRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: collectorcard-eventbridge-invoke-codebuild-role
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: AllowStartCodeBuild
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - codebuild:StartBuild
-                Resource: !GetAtt DependencyCheckProject.Arn
+                - npm run build
+                - npm test
 
   BackendPipeline:
+    Condition: IsDevelopment
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt PipelineRole.Arn
       ArtifactStore:
         Type: S3
-        Location: !Ref SharedArtifactBucket
+        Location: !Ref SharedArtifactBucketName
       Stages:
         - Name: Source
           Actions:
-            - Name: GitHubSource
+            - Name: SourceAction
               ActionTypeId:
                 Category: Source
                 Owner: AWS
                 Provider: CodeStarSourceConnection
                 Version: 1
-              OutputArtifacts:
-                - Name: SourceOutput
               Configuration:
                 ConnectionArn: !Ref GitHubConnectionArn
                 FullRepositoryId: !Sub "${RepoOwner}/${RepoName}"
                 BranchName: !Ref FeatureBranch
-        - Name: DependencyCheck
-          Actions:
-            - Name: DependencyAudit
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: 1
-              InputArtifacts:
+              OutputArtifacts:
                 - Name: SourceOutput
-              Configuration:
-                ProjectName: !Ref DependencyCheckProject
-        - Name: BuildAndDeploy
+        - Name: Build
           Actions:
-            - Name: BuildAndDeployAction
+            - Name: BuildAction
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -222,10 +198,12 @@ Resources:
                 ProjectName: !Ref BackendBuildProject
 
 Outputs:
-  BackendPipelineName:
-    Description: Name of backend pipeline.
-    Value: !Ref BackendPipeline
+  ArtifactBucketName:
+    Condition: IsShared
+    Description: Name of the shared artifact bucket
+    Value: !Ref SharedArtifactBucket
 
-  DependencyCheckRuleName:
-    Description: Weekly EventBridge rule name.
-    Value: !Ref WeeklyDependencyCheckRule
+  PipelineName:
+    Condition: IsDevelopment
+    Description: Name of backend pipeline
+    Value: !Ref BackendPipeline
