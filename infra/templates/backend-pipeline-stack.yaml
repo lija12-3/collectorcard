@@ -37,7 +37,7 @@ Parameters:
     Default: develop
   FeatureBranch:
     Type: String
-    Default: feat/dev
+    Default: feat/CDEV-134_codepipeline
   Region:
     Type: String
     Default: us-east-1
@@ -116,7 +116,15 @@ Resources:
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
                 Resource: "*"
-
+        - PolicyName: AllowCodeConnectionsUsage
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codeconnections:UseConnection
+                  - codestar-connections:UseConnection
+                Resource: !Ref GitHubConnectionArn
   CodeBuildRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
