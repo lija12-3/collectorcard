@@ -22,7 +22,7 @@
   {
    
     "ParameterKey": "SharedArtifactBucket",
-    "ParameterValue": "card-collector-artifacts-782496497250"
+    "ParameterValue": "artifact bucket"
   }
   
 ]

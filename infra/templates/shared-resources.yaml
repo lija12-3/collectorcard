@@ -1,16 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Shared Services stack for Card Collectors project - creates S3 artifact bucket and ECR repo with cross-account access
+Description: Shared Services stack for the Card Collectors project - creates S3 artifact bucket with cross-account access.
 
 Parameters:
   DevAccountId:
     Type: String
-    Description: AWS Account ID of the Development account 
+    Description: AWS Account ID of the Development account
 
 Resources:
+  # --------------------------------------------------
+  # S3 Artifact Bucket
+  # --------------------------------------------------
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub card-collector-artifacts-${AWS::AccountId}
+      BucketName: !Sub collectorcard-artifacts-shared-${AWS::AccountId}-${AWS::Region}-${AWS::StackName}
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -34,54 +37,5 @@ Resources:
               - s3:PutObject
               - s3:GetBucketLocation
             Resource:
-              - !Sub arn:aws:s3:::card-collector-artifacts-${AWS::AccountId}
-              - !Sub arn:aws:s3:::card-collector-artifacts-${AWS::AccountId}/*
-
-  BackendECR:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: backend
-      ImageScanningConfiguration:
-        ScanOnPush: true
-      LifecyclePolicy:
-        LifecyclePolicyText: |
-          {
-            "rules": [
-              {
-                "rulePriority": 1,
-                "description": "Expire untagged images after 30 days",
-                "selection": {
-                  "tagStatus": "untagged",
-                  "countType": "sinceImagePushed",
-                  "countUnit": "days",
-                  "countNumber": 30
-                },
-                "action": { "type": "expire" }
-              }
-            ]
-          }
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: !Sub arn:aws:iam::${DevAccountId}:root
-            Action:
-              - ecr:GetDownloadUrlForLayer
-              - ecr:BatchGetImage
-              - ecr:BatchCheckLayerAvailability
-              - ecr:PutImage
-              - ecr:InitiateLayerUpload
-              - ecr:UploadLayerPart
-              - ecr:CompleteLayerUpload
-
-Outputs:
-  ArtifactBucketName:
-    Value: !Ref ArtifactBucket
-    Export:
-      Name: SharedArtifactBucket
-
-  ECRRepositoryUri:
-    Value: !GetAtt BackendECR.RepositoryUri
-    Export:
-      Name: SharedECRRepositoryUri
+              - !Sub arn:aws:s3:::collectorcard-artifacts-shared-${AWS::AccountId}-${AWS::Region}-${AWS::StackName}
+              - !Sub arn:aws:s3:::collectorcard-artifacts-shared-${AWS::AccountId}-${AWS::Region}-${AWS::StackName}/*
