@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: >
+  Development stack for Card Collector backend CI/CD pipeline.
+  Uses shared artifact bucket from Shared Services account (same region).
+  Includes EventBridge rule to trigger dependency check weekly.
+
+Parameters:
+  DevAccountId:
+    Type: String
+  RepoOwner:
+    Type: String
+  RepoName:
+    Type: String
+  GitHubConnectionArn:
+    Type: String
+  SharedArtifactBucket:
+    Type: String
+  MainBranch:
+    Type: String
+  DevelopBranch:
+    Type: String
+  FeatureBranch:
+    Type: String
+
+Resources:
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: collectorcard-backend-pipeline-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+      Policies:
+        - PolicyName: CrossAccountS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucket}"
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucket}/*"
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: collectorcard-backend-codebuild-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+
+  BackendBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: collectorcard-build-deploy
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/standard:7.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                nodejs: 20
+              commands:
+                - cd backend
+                - npm ci
+            build:
+              commands:
+                - echo "Running lint,build, and tests..."
+                - npm run lint
+                - npm run format:check
+                - npm run type-check
+                - npm audit --audit-level=high || true
+                - npm run build:api
+                - npm run build:lambdas
+                - npm run test --if-present
+            post_build:
+              commands:
+                - |
+                  if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == "refs/heads/${MainBranch}" ]]; then
+                    echo "Deploying to PRODUCTION..."
+                  elif [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == "refs/heads/${DevelopBranch}" ]]; then
+                    echo "Deploying to STAGING..."
+                  else
+                    echo "Feature branch detected — skipping deploy."
+
+  DependencyCheckProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: collectorcard-dependency-check
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                nodejs: 20
+              commands:
+                - cd backend
+                - npm ci
+            build:
+              commands:
+                - npm outdated || true
+                - npm audit --json > audit-report.json || true
+
+  # --------------------------------------------------------
+  # EventBridge Rule to trigger weekly dependency check
+  # --------------------------------------------------------
+  WeeklyDependencyCheckRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: collectorcard-weekly-dependency-check
+      Description: "Triggers the DependencyCheckProject every Monday at midnight UTC"
+      ScheduleExpression: cron(0 0 ? * MON *)   # every Monday 00:00 UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt DependencyCheckProject.Arn
+          Id: "DependencyCheckTarget"
+          RoleArn: !GetAtt EventInvokeRole.Arn
+
+  # IAM role that allows EventBridge to start the CodeBuild project
+  EventInvokeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: collectorcard-eventbridge-invoke-codebuild-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartCodeBuild
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                Resource: !GetAtt DependencyCheckProject.Arn
+
+  BackendPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref SharedArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: 1
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn
+                FullRepositoryId: !Sub "${RepoOwner}/${RepoName}"
+                BranchName: !Ref FeatureBranch
+        - Name: DependencyCheck
+          Actions:
+            - Name: DependencyAudit
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref DependencyCheckProject
+        - Name: BuildAndDeploy
+          Actions:
+            - Name: BuildAndDeployAction
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref BackendBuildProject
+
+Outputs:
+  BackendPipelineName:
+    Description: Name of backend pipeline.
+    Value: !Ref BackendPipeline
+
+  DependencyCheckRuleName:
+    Description: Weekly EventBridge rule name.
+    Value: !Ref WeeklyDependencyCheckRule

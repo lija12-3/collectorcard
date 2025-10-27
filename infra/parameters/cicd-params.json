@@ -1,0 +1,12 @@
+[
+  { "ParameterKey": "SharedAccountId", "ParameterValue": "782496497250" },
+  { "ParameterKey": "DevAccountId", "ParameterValue": "068898927889" },
+  { "ParameterKey": "Region", "ParameterValue": "us-east-1" },
+  { "ParameterKey": "RepoOwner", "ParameterValue": "lija12-3" },
+  { "ParameterKey": "RepoName", "ParameterValue": "collectorcard" },
+  { "ParameterKey": "GitHubConnectionArn", "ParameterValue": "arn:aws:codeconnections:us-east-1:068898927889:connection/faa51d75-0b97-44e4-8e5d-b226a9e446a4" },
+  { "ParameterKey": "MainBranch", "ParameterValue": "main" },
+  { "ParameterKey": "DevelopBranch", "ParameterValue": "develop" },
+  { "ParameterKey": "FeatureBranch", "ParameterValue": "feat/CDEV-134_codepipeline" },
+  { "ParameterKey": "TemplateBucketName", "ParameterValue": "collectorcard-artifacts" }
+]
