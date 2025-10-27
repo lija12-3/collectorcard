@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "GitHubConnectionArn",
+    "ParameterValue": "arn:aws:codestar-connections:ap-south-1:123456789012:connection/abcd1234efgh5678"
+  },
+  {
+    "ParameterKey": "RepoOwner",
+    "ParameterValue": "lija12-3"
+  },
+  {
+    "ParameterKey": "RepoName",
+    "ParameterValue": "collectorcard"
+  },
+  {
+    "ParameterKey": "MainBranch",
+    "ParameterValue": "main"
+  },
+  {
+    "ParameterKey": "DevelopBranch",
+    "ParameterValue": "feat/CDEV-134_codepipeline"
+  }
+]
