@@ -1,24 +1,17 @@
-#!/bin/bash
-set -e
-
-STACK_NAME="shared-artifacts-stack"
-PROFILE="shared-services"
-REGION="us-east-1"
-
-echo "🚀 Deploying Shared Artifacts Stack ($STACK_NAME) in Shared Services Account..."
-
 aws cloudformation deploy \
-  --stack-name $STACK_NAME \
+  --stack-name collectorcard-cicd-master \
   --template-file ../templates/shared-artifacts-stack.yaml \
-  --parameters
-    file://../parameters/shared-params.json \
+  --parameter-overrides \
+    SharedAccountId=782496497250 \
+    DevAccountId=068898927889 \
+    Region=us-east-1 \
+    RepoOwner=lija12-3 \
+    RepoName=collectorcard \
+    GitHubConnectionArn=arn:aws:codeconnections:us-east-1:068898927889:connection/faa51d75-0b97-44e4-8e5d-b226a9e446a4 \
+    MainBranch=main \
+    DevelopBranch=develop \
+    FeatureBranch=feat/CDEV-134_codepipeline \
+    SharedArtifactBucket=shared-artifacts-collectorcard-us-east-1 \
   --capabilities CAPABILITY_NAMED_IAM \
-  --region $REGION \
-  --profile $PROFILE
-
-echo "✅ Shared Artifacts Stack deployed successfully."
-
-aws cloudformation describe-stacks \
-  --stack-name $STACK_NAME \
-  --profile $PROFILE \
-  --query "Stacks[0].Outputs" --output table
+  --profile shared-services \
+  --region us-east-1
