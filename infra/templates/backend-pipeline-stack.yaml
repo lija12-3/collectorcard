@@ -185,7 +185,7 @@ Resources:
             Value: !Ref Region
       Source:
         Type: CODEPIPELINE
-        BuildSpec: backend/buildspec-backend.yml  
+        BuildSpec: backend/buildspec-backend.yaml  
   BackendPipeline:
     Condition: IsDevelopment
     Type: AWS::CodePipeline::Pipeline
