@@ -4,16 +4,15 @@
   "description": "Collectors card backend services",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
- "scripts": {
-  "prebuild": "npm run clean",
-  "build": "npm run build:lambdas && npm run build:api",
-  "build:lambdas": "node scripts/build-lambdas.mjs",
-  "zip:lambdas": "mkdir -p dist/zips && cd dist/lambdas && for f in *.js; do zip -j ../zips/${f%.js}.zip $f; done",
-  "build:api": "tsc -p tsconfig.json",
-  "start:api": "node apps/api/dist/main.js",
-  "clean": "rimraf dist node_modules/.cache"
-},
-
+  "scripts": {
+    "prebuild": "npm run clean",
+    "build": "npm run build:lambdas && npm run build:api",
+    "build:lambdas": "node scripts/build-lambdas.mjs",
+    "zip:lambdas": "mkdir -p dist/zips && cd dist/lambdas && for f in *.js; do zip -j ../zips/${f%.js}.zip $f; done",
+    "build:api": "tsc -p tsconfig.json",
+    "start:api": "node apps/api/dist/main.js",
+    "clean": "rimraf dist node_modules/.cache"
+  },
   "workspaces": [
     "apps/*"
   ],
@@ -47,12 +46,14 @@
     "@nestjs/core": "^10.3.0",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",
+    "@nestjs/typeorm": "^11.0.0",
     "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1500.0",
     "jsonwebtoken": "^9.0.2",
     "passport": "^0.7.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.27"
   },
   "engines": {
     "node": ">=18.0.0"
