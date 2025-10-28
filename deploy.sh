@@ -25,9 +25,16 @@ if [ "$PROFILE" == "null" ] || [ "$STACK_NAME" == "null" ]; then
   exit 1
 fi
 
+# --- NEW SECTION: Verify that the SSO profile is logged in ---
+if ! aws sts get-caller-identity --profile "$PROFILE" >/dev/null 2>&1; then
+  echo "🔑 SSO session for profile '$PROFILE' is expired or missing."
+  echo "👉 Opening AWS SSO login..."
+  aws sso login --profile "$PROFILE"
+  echo "✅ SSO session refreshed for profile '$PROFILE'."
+fi
+# -------------------------------------------------------------
+
 # Build parameter lines using jq to avoid shell-splitting issues.
-# Only include parameters where value is not null
-# Each line will be: ParameterKey=KeyName,ParameterValue=Value
 mapfile -t PARAMS_ARRAY < <(
   jq -r --arg env "$ENVIRONMENT" '
     .environments[$env].Parameters
@@ -39,15 +46,14 @@ mapfile -t PARAMS_ARRAY < <(
 
 # Trim whitespace (remove stray CR/LF characters that can appear on Windows)
 for i in "${!PARAMS_ARRAY[@]}"; do
-  # remove carriage returns and trim leading/trailing whitespace
   PARAMS_ARRAY[$i]=$(echo "${PARAMS_ARRAY[$i]}" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 done
 
-# Debug: show exactly what will be sent (helpful for errors)
+# Debug output
 echo "DEBUG → Parameters being sent to CloudFormation:"
 printf '  %s\n' "${PARAMS_ARRAY[@]}"
 
-# Create or update stack depending on existence
+# Detect if stack exists
 STACK_EXISTS=false
 if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --profile "$PROFILE" --region "$REGION" >/dev/null 2>&1; then
   STACK_EXISTS=true
@@ -66,7 +72,6 @@ if [ "$STACK_EXISTS" = true ]; then
     echo "✅ Stack '$STACK_NAME' updated successfully."
   else
     echo "ℹ️ No updates to be performed (or update failed)."
-    # If update fails because no changes, the CLI returns an error, we ignore that case.
   fi
 else
   echo "🚀 Creating new stack: $STACK_NAME in environment: $ENVIRONMENT"

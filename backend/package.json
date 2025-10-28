@@ -4,14 +4,16 @@
   "description": "Collectors card backend services",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
-    "build:lambdas": "node scripts/build-lambdas.mjs",
-    "zip:lambdas": "mkdir -p dist/zips && cd dist/lambdas && for f in *.js; do zip -j ../zips/${f%.js}.zip $f; done",
-    "build:api": "tsc -p tsconfig.json",
-    "start:api": "node apps/api/dist/main.js",
-    "clean": "rimraf dist node_modules/.cache",
-    "prebuild": "npm run clean"
-  },
+ "scripts": {
+  "prebuild": "npm run clean",
+  "build": "npm run build:lambdas && npm run build:api",
+  "build:lambdas": "node scripts/build-lambdas.mjs",
+  "zip:lambdas": "mkdir -p dist/zips && cd dist/lambdas && for f in *.js; do zip -j ../zips/${f%.js}.zip $f; done",
+  "build:api": "tsc -p tsconfig.json",
+  "start:api": "node apps/api/dist/main.js",
+  "clean": "rimraf dist node_modules/.cache"
+},
+
   "workspaces": [
     "apps/*"
   ],

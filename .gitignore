@@ -1,0 +1,43 @@
+xx# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Output directories
+dist/
+build/
+coverage/
+
+# Lambda zips
+dist/zips/
+*.zip
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+
+# IDE / Editor settings
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# AWS / CI/CD
+.aws-sam/
+cdk.out/
+
+# Prevent accidental commit of local AWS credentials
+%USERPROFILE%.awscredentials
+.aws/
+**/.aws/
+*.aws*
