@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: collectorcard-api
-          image: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectorcard-backend:latest
+          image: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
