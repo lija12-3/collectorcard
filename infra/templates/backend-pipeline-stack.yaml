@@ -90,7 +90,7 @@ Resources:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
-      RoleName: card-collectors-backend-pipeline-role 
+      RoleName: card-collectors-backend-pipeline-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -125,6 +125,7 @@ Resources:
                   - codeconnections:UseConnection
                   - codestar-connections:UseConnection
                 Resource: !Ref GitHubConnectionArn
+
   CodeBuildRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -153,6 +154,7 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:7.0
         Type: LINUX_CONTAINER
+        PrivilegedMode: true   # Needed for Docker builds
       Source:
         Type: CODEPIPELINE
         BuildSpec: |
@@ -164,16 +166,52 @@ Resources:
               commands:
                 - cd backend
                 - npm ci
+            pre_build:
+              commands:
+                - echo "Logging into Amazon ECR..."
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+                - cd services/api
             build:
               commands:
+                - echo "Building NestJS backend..."
                 - npm run build
-  #             - npm test
+                # - npm test    # Uncomment when test script is added
+                - echo "Building Docker image..."
+                - docker build -t collectorcard-backend .
+                - docker tag collectorcard-backend:latest 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
+            post_build:
+              commands:
+                - echo "Pushing Docker image to ECR..."
+                - docker push 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
+                - echo "Creating appspec.yaml dynamically..."
+                - mkdir -p ../k8s
+                - cat > ../appspec.yaml <<'EOF'
+                  version: 0.0
+                  Resources:
+                    - TargetService:
+                        Type: AWS::EKS::Service
+                        Properties:
+                          ClusterName: collectorcard-cluster
+                          Namespace: default
+                          ServiceName: collectorcard-api-svc
+                          ImageConfiguration:
+                            ContainerName: collectorcard-api
+                            ImageURI: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectorcard-backend:latest
+                  EOF
+                - echo "Writing image definitions file for CodeDeploy..."
+                - printf '[{"name":"collectorcard-api","imageUri":"782496497250.dkr.ecr.%s.amazonaws.com/collectorcard-backend:latest"}]' $AWS_DEFAULT_REGION > ../imagedefinitions.json
+          artifacts:
+            files:
+              - backend/appspec.yaml
+              - backend/k8s/deployment.yaml
+              - backend/k8s/service.yaml
+              - backend/imagedefinitions.json
 
   BackendPipeline:
     Condition: IsDevelopment
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: card-collectors-backend-pipeline  
+      Name: card-collectors-backend-pipeline
       RoleArn: !GetAtt PipelineRole.Arn
       ArtifactStore:
         Type: S3
