@@ -1,0 +1,32 @@
+{
+  "name": "collectors-card",
+  "version": "1.0.0",
+  "description": "Collectors Card Monorepo",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "cd backend && npm run lint",
+    "lint:check": "cd backend && npm run lint:check",
+    "format": "cd backend && npm run format",
+    "format:check": "cd backend && npm run format:check",
+    "type-check": "cd backend && npm run type-check",
+    "build:api": "cd backend && npm run build:api",
+    "build:lambdas": "cd backend && npm run build:lambdas",
+    "start:api:dev": "cd backend && npm run start:api:dev",
+    "start:api": "cd backend && npm run start:api",
+    "install:all": "cd backend && npm install"
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^14.0.0"
+  },
+  "lint-staged": {
+    "backend/**/*.{ts,js}": [
+      "cd backend && npm run lint",
+      "cd backend && npm run format"
+    ],
+    "backend/**/*.{json,md,yml,yaml}": [
+      "cd backend && npm run format"
+    ]
+  }
+}
