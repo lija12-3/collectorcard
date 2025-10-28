@@ -184,7 +184,6 @@ Resources:
               commands:
                 - echo "Logging into Amazon ECR..."
                 - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-                - cd services/api
             build:
               commands:
                 - echo "Building NestJS backend..."
