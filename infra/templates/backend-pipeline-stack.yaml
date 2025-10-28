@@ -40,6 +40,10 @@ Parameters:
     Type: String
     Default: main
 
+  StagingBranch:
+    Type: String
+    Default: staging
+
   DevelopBranch:
     Type: String
     Default: develop
