@@ -11,33 +11,43 @@ Parameters:
       - Shared
       - Development
     Description: Specify whether this is a Shared or Development stack.
+
   SharedAccountId:
     Type: String
     Description: AWS Account ID for Shared Services (artifact bucket).
+
   DevAccountId:
     Type: String
     Description: AWS Account ID for Development account (pipeline + builds).
+
   RepoOwner:
     Type: String
     Default: lija12-3
+
   RepoName:
     Type: String
     Default: collectorcard
+
   GitHubConnectionArn:
     Type: String
     Default: ""
+
   SharedArtifactBucketName:
     Type: String
     Default: ""
+
   MainBranch:
     Type: String
     Default: main
+
   DevelopBranch:
     Type: String
     Default: develop
+
   FeatureBranch:
     Type: String
     Default: feat/CDEV-134_codepipeline
+
   Region:
     Type: String
     Default: us-east-1
@@ -141,6 +151,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
 
   BackendBuildProject:
     Condition: IsDevelopment
@@ -155,6 +166,9 @@ Resources:
         Image: aws/codebuild/standard:7.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true   # Needed for Docker builds
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref Region
       Source:
         Type: CODEPIPELINE
         BuildSpec: |
@@ -175,7 +189,6 @@ Resources:
               commands:
                 - echo "Building NestJS backend..."
                 - npm run build
-                # - npm test    # Uncomment when test script is added
                 - echo "Building Docker image..."
                 - docker build -t collectorcard-backend .
                 - docker tag collectorcard-backend:latest 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
@@ -185,7 +198,8 @@ Resources:
                 - docker push 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
                 - echo "Creating appspec.yaml dynamically..."
                 - mkdir -p ../k8s
-                - cat > ../appspec.yaml <<'EOF'
+                - |
+                  cat > ../appspec.yaml <<'EOF'
                   version: 0.0
                   Resources:
                     - TargetService:
