@@ -7,7 +7,7 @@ RUN npm i --omit=dev
 COPY apps/api ./apps/api
 COPY tsconfig.json ./tsconfig.json
 
-RUN npx tsc -p apps/api/tsconfig.json
+RUN npx tsc -p tsconfig.json
 
 ENV NODE_ENV=production
 EXPOSE 3000
