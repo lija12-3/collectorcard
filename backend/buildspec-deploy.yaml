@@ -1,0 +1,77 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+    EKS_CLUSTER_NAME: "dev-eks-fargate-cluster"
+    NAMESPACE: "collectors-card-app-dev"
+    IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
+    # EKS_DEPLOY_ROLE_ARN may be empty if not used; set via CloudFormation environment variable
+    EKS_DEPLOY_ROLE_ARN: ""
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - set -euo pipefail
+      - echo "🔧 Installing kubectl if missing..."
+      - |
+        if ! command -v kubectl &> /dev/null; then
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl /usr/local/bin/
+        fi
+      - kubectl version --client || true
+
+  pre_build:
+    commands:
+      - echo "🔐 Configuring kubeconfig for EKS cluster $EKS_CLUSTER_NAME..."
+      - |
+        if [ -n "$EKS_DEPLOY_ROLE_ARN" ] && [ "$EKS_DEPLOY_ROLE_ARN" != " " ]; then
+          echo "Using role ARN: $EKS_DEPLOY_ROLE_ARN to update kubeconfig"
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_DEFAULT_REGION" --role-arn "$EKS_DEPLOY_ROLE_ARN"
+        else
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_DEFAULT_REGION"
+        fi
+      - echo "✅ Verifying cluster access..."
+      - kubectl get nodes || (kubectl get ns && echo "cluster access ok")
+      - echo "📦 Reading image URI from build artifact (prefer image-uri.txt)..."
+      - |
+        if [ -f build_output/image-uri.txt ]; then
+          IMAGE_URI=$(cat build_output/image-uri.txt)
+        elif [ -f build_output/image-tag.txt ]; then
+          IMAGE_TAG=$(cat build_output/image-tag.txt)
+          IMAGE_URI="$IMAGE_REPO:$IMAGE_TAG"
+        else
+          echo "ERROR: image-uri.txt or image-tag.txt not found in artifact"
+          exit 1
+        fi
+      - echo "✅ Will deploy image: $IMAGE_URI"
+      - echo "🧱 Ensuring namespace '$NAMESPACE' exists..."
+      - kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$NAMESPACE"
+
+  build:
+    commands:
+      - echo "🚀 Deploying to namespace: $NAMESPACE"
+      - |
+        if kubectl get deployment collectors-card-app -n "$NAMESPACE" >/dev/null 2>&1; then
+          echo "Deployment exists — updating image..."
+          kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
+        else
+          echo "Deployment does not exist — creating resources from manifests..."
+          kubectl apply -f backend/k8s/deployment.yaml -n "$NAMESPACE"
+          kubectl apply -f backend/k8s/service.yaml -n "$NAMESPACE"
+          # ensure manifest container name matches; then set image
+          kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
+        fi
+      - echo "⏳ Waiting for rollout to complete..."
+      - kubectl rollout status deployment/collectors-card-app -n "$NAMESPACE" --timeout=10m
+
+  post_build:
+    commands:
+      - echo "✅ Deployment completed successfully!"
+      - echo "🔍 Deployment details:"
+      - kubectl get deployment collectors-card-app -n "$NAMESPACE" -o wide || true
+      - echo ""
+      - echo

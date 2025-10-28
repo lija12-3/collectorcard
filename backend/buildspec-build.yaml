@@ -1,0 +1,52 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+    IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing backend dependencies..."
+      - cd backend
+      - npm ci
+
+  pre_build:
+    commands:
+      - echo "Logging into Amazon ECR..."
+      # derive registry host (the part before the first slash)
+      - REGISTRY=$(echo $IMAGE_REPO | cut -d'/' -f1)
+      - echo "Registry detected: $REGISTRY"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
+      - echo "Generating image tag from commit hash..."
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+      - echo "Using IMAGE_TAG=$IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building NestJS backend..."
+      - npm run build
+      - echo "Building Docker image..."
+      - docker build -t $IMAGE_REPO:$IMAGE_TAG -f apps/api/Dockerfile .
+      - docker tag $IMAGE_REPO:$IMAGE_TAG $IMAGE_REPO:latest
+
+  post_build:
+    commands:
+      - echo "Pushing Docker images to ECR..."
+      - docker push $IMAGE_REPO:$IMAGE_TAG
+      - docker push $IMAGE_REPO:latest
+      - echo "Writing image tag and URI to file for deploy stage..."
+      - mkdir -p build_output
+      - echo $IMAGE_TAG > build_output/image-tag.txt
+      - echo "$IMAGE_REPO:$IMAGE_TAG" > build_output/image-uri.txt
+
+artifacts:
+  files:
+    - backend/k8s/**/*
+    - build_output/image-tag.txt
+    - build_output/image-uri.txt
+  name: BuildArtifact

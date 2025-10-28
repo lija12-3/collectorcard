@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: collectors-card-service-dev
+  namespace: collectors-card-app-dev
+  labels:
+    app: collectors-card-app
+    environment: dev
+spec:
+  type: LoadBalancer
+  selector:
+    app: collectors-card-app
+    environment: dev
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+  sessionAffinity: None

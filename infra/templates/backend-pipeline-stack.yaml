@@ -23,18 +23,22 @@ Parameters:
   RepoOwner:
     Type: String
     Default: lija12-3
+    Description: GitHub repository owner/org.
 
   RepoName:
     Type: String
-    Default: collectors-card/app
+    Default: collectorcard
+    Description: GitHub repository name (use just the repo name, not path).
 
   GitHubConnectionArn:
     Type: String
     Default: ""
+    Description: ARN for CodeStar GitHub connection.
 
   SharedArtifactBucketName:
     Type: String
     Default: ""
+    Description: Shared artifact S3 bucket name.
 
   MainBranch:
     Type: String
@@ -56,6 +60,16 @@ Parameters:
     Type: String
     Default: us-east-1
 
+  EKSClusterName:
+    Type: String
+    Default: ""
+    Description: Name of the existing EKS Fargate cluster.
+
+  EKSDeployRoleArn:
+    Type: String
+    Default: ""
+    Description: ARN of the IAM role to assume for EKS deployment (optional).
+
 Conditions:
   IsShared: !Equals [!Ref EnvironmentType, "Shared"]
   IsDevelopment: !Equals [!Ref EnvironmentType, "Development"]
@@ -67,6 +81,7 @@ Resources:
   SharedArtifactBucket:
     Condition: IsShared
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "shared-artifacts-card-collector-${Region}"
       VersioningConfiguration:
@@ -113,7 +128,7 @@ Resources:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: CrossAccountS3Access
+        - PolicyName: PipelineAccess
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -130,10 +145,6 @@ Resources:
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
                 Resource: "*"
-        - PolicyName: AllowCodeConnectionsUsage
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
               - Effect: Allow
                 Action:
                   - codeconnections:UseConnection
@@ -170,7 +181,28 @@ Resources:
                   - ecr:PutImage
                   - ecr:UploadLayerPart
                 Resource: arn:aws:ecr:us-east-1:782496497250:repository/collectors-card/app
+        - PolicyName: EKSDeploymentAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowEKSDescribe
+                Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                Resource: "*"
+              - Sid: AllowAssumeEKSRole
+                Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: !If
+                  - HasEKSDeployRoleArn
+                  - !Ref EKSDeployRoleArn
+                  - !Ref "AWS::NoValue"
 
+  #########################################
+  # CODEBUILD PROJECTS
+  #########################################
   BackendBuildProject:
     Condition: IsDevelopment
     Type: AWS::CodeBuild::Project
@@ -189,7 +221,36 @@ Resources:
             Value: !Ref Region
       Source:
         Type: CODEPIPELINE
-        BuildSpec: backend/buildspec-backend.yaml  
+        BuildSpec: backend/buildspec-build.yaml
+
+  DeployBuildProject:
+    Condition: IsDevelopment
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: card-collectors-backend-deploy
+      Description: Deploy backend to EKS Fargate
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: false
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref Region
+          - Name: EKS_CLUSTER_NAME
+            Value: !Ref EKSClusterName
+          - Name: EKS_DEPLOY_ROLE_ARN
+            Value: !Ref EKSDeployRoleArn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: backend/buildspec-deploy.yaml
+
+  #########################################
+  # CODEPIPELINE
+  #########################################
   BackendPipeline:
     Condition: IsDevelopment
     Type: AWS::CodePipeline::Pipeline
@@ -214,6 +275,7 @@ Resources:
                 BranchName: !Ref FeatureBranch
               OutputArtifacts:
                 - Name: SourceOutput
+
         - Name: Build
           Actions:
             - Name: BuildAction
@@ -224,8 +286,24 @@ Resources:
                 Version: 1
               InputArtifacts:
                 - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildArtifact
               Configuration:
                 ProjectName: !Ref BackendBuildProject
+
+        - Name: Deploy
+          Actions:
+            - Name: DeployToEKS
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: BuildArtifact
+              Configuration:
+                ProjectName: !Ref DeployBuildProject
+              RunOrder: 1
 
 Outputs:
   ArtifactBucketName:
@@ -237,3 +315,15 @@ Outputs:
     Condition: IsDevelopment
     Description: Name of backend pipeline
     Value: !Ref BackendPipeline
+
+  DeployProjectName:
+    Condition: IsDevelopment
+    Description: Name of deploy CodeBuild project
+    Value: !Ref DeployBuildProject
+
+Mappings: {}
+
+Metadata: {}
+
+Conditions:
+  HasEKSDeployRoleArn: !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
