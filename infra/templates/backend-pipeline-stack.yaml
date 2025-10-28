@@ -198,6 +198,7 @@ Resources:
                 - docker push 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
                 - echo "Writing image definitions file for CodeDeploy..."
                 - printf '[{"name":"collectorcard-api","imageUri":"782496497250.dkr.ecr.%s.amazonaws.com/collectorcard-backend:latest"}]' $AWS_DEFAULT_REGION > ../imagedefinitions.json
+
           artifacts:
             files:
               - backend/appspec.yaml
