@@ -90,7 +90,7 @@ Resources:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
-      RoleName: collectorcard-pipeline-role
+      RoleName: card-collectors-backend-pipeline-role 
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -129,7 +129,7 @@ Resources:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
-      RoleName: collectorcard-codebuild-role
+      RoleName: card-collectors-backend-codebuild-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -145,7 +145,7 @@ Resources:
     Condition: IsDevelopment
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: collectorcard-build
+      Name: card-collectors-backend-build
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
         Type: CODEPIPELINE
@@ -173,6 +173,7 @@ Resources:
     Condition: IsDevelopment
     Type: AWS::CodePipeline::Pipeline
     Properties:
+      Name: card-collectors-backend-pipeline  
       RoleArn: !GetAtt PipelineRole.Arn
       ArtifactStore:
         Type: S3

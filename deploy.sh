@@ -18,21 +18,26 @@ fi
 # Read basic fields
 REGION=$(jq -r '.region' "$CONFIG_FILE")
 PROFILE=$(jq -r ".environments[\"$ENVIRONMENT\"].Profile" "$CONFIG_FILE")
-STACK_NAME=$(jq -r ".environments[\"$ENVIRONMENT\"].StackName" "$CONFIG_FILE")
+RAW_STACK_NAME=$(jq -r ".environments[\"$ENVIRONMENT\"].StackName" "$CONFIG_FILE")
 
-if [ "$PROFILE" == "null" ] || [ "$STACK_NAME" == "null" ]; then
+if [ "$PROFILE" == "null" ] || [ "$RAW_STACK_NAME" == "null" ]; then
   echo "❌ Environment '$ENVIRONMENT' not found in $CONFIG_FILE"
   exit 1
 fi
 
-# --- NEW SECTION: Verify that the SSO profile is logged in ---
+# --- Add standardized project prefix ---
+PROJECT_PREFIX="card-collectors"
+STACK_NAME="${PROJECT_PREFIX}-${RAW_STACK_NAME}"
+# --------------------------------------
+
+# --- Verify that the SSO profile is logged in ---
 if ! aws sts get-caller-identity --profile "$PROFILE" >/dev/null 2>&1; then
   echo "🔑 SSO session for profile '$PROFILE' is expired or missing."
   echo "👉 Opening AWS SSO login..."
   aws sso login --profile "$PROFILE"
   echo "✅ SSO session refreshed for profile '$PROFILE'."
 fi
-# -------------------------------------------------------------
+# ------------------------------------------------
 
 # Build parameter lines using jq to avoid shell-splitting issues.
 mapfile -t PARAMS_ARRAY < <(
@@ -52,6 +57,9 @@ done
 # Debug output
 echo "DEBUG → Parameters being sent to CloudFormation:"
 printf '  %s\n' "${PARAMS_ARRAY[@]}"
+echo "🧩 Stack name: $STACK_NAME"
+echo "🧩 Profile: $PROFILE"
+echo "🧩 Region: $REGION"
 
 # Detect if stack exists
 STACK_EXISTS=false
