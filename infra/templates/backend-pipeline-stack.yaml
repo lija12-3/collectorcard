@@ -73,6 +73,7 @@ Parameters:
 Conditions:
   IsShared: !Equals [!Ref EnvironmentType, "Shared"]
   IsDevelopment: !Equals [!Ref EnvironmentType, "Development"]
+  HasEKSDeployRoleArn: !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
 
 Resources:
   #########################################
@@ -320,10 +321,3 @@ Outputs:
     Condition: IsDevelopment
     Description: Name of deploy CodeBuild project
     Value: !Ref DeployBuildProject
-
-Mappings: {}
-
-Metadata: {}
-
-Conditions:
-  HasEKSDeployRoleArn: !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
