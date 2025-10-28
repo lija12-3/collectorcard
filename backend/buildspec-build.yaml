@@ -17,7 +17,6 @@ phases:
   pre_build:
     commands:
       - echo "Logging into Amazon ECR..."
-      # derive registry host (the part before the first slash)
       - REGISTRY=$(echo $IMAGE_REPO | cut -d'/' -f1)
       - echo "Registry detected: $REGISTRY"
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
