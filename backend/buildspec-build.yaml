@@ -2,6 +2,7 @@ version: 0.2
 
 env:
   variables:
+    # Always ensure your ECR repo is in the correct region.
     AWS_DEFAULT_REGION: "us-east-1"
     IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
 
@@ -10,15 +11,18 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
+      # Use two spaces indentation here
       - echo "Installing backend dependencies..."
       - cd backend
       - npm ci
 
   pre_build:
     commands:
+      # Use two spaces indentation here
       - echo "Logging into Amazon ECR..."
       - REGISTRY=$(echo $IMAGE_REPO | cut -d'/' -f1)
       - echo "Registry detected: $REGISTRY"
+      # This command requires the CodeBuild service role to have ECR permissions.
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
       - echo "Generating image tag from commit hash..."
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -27,14 +31,17 @@ phases:
 
   build:
     commands:
+      # Use two spaces indentation here
       - echo "Building NestJS backend..."
       - npm run build
       - echo "Building Docker image..."
+      # NOTE: Assuming you are running this from the root, and your Dockerfile is at apps/api/Dockerfile
       - docker build -t $IMAGE_REPO:$IMAGE_TAG -f apps/api/Dockerfile .
       - docker tag $IMAGE_REPO:$IMAGE_TAG $IMAGE_REPO:latest
 
   post_build:
     commands:
+      # Use two spaces indentation here
       - echo "Pushing Docker images to ECR..."
       - docker push $IMAGE_REPO:$IMAGE_TAG
       - docker push $IMAGE_REPO:latest
@@ -45,6 +52,7 @@ phases:
 
 artifacts:
   files:
+    # Ensure these paths are correct relative to your build root
     - backend/k8s/**/*
     - build_output/image-tag.txt
     - build_output/image-uri.txt
