@@ -27,7 +27,7 @@ fi
 
 # --- Add standardized project prefix ---
 PROJECT_PREFIX="card-collectors"
-STACK_NAME="${PROJECT_PREFIX}-${RAW_STACK_NAME}"
+STACK_NAME="${RAW_STACK_NAME}"
 # --------------------------------------
 
 # --- Verify that the SSO profile is logged in ---
