@@ -26,7 +26,7 @@ Parameters:
 
   RepoName:
     Type: String
-    Default: collectorcard
+    Default: collectors-card/app
 
   GitHubConnectionArn:
     Type: String
@@ -165,7 +165,7 @@ Resources:
                   - ecr:InitiateLayerUpload
                   - ecr:PutImage
                   - ecr:UploadLayerPart
-                Resource: arn:aws:ecr:us-east-1:782496497250:repository/collectorcard-backend
+                Resource: arn:aws:ecr:us-east-1:782496497250:repository/collectors-card/app
 
   BackendBuildProject:
     Condition: IsDevelopment
@@ -203,14 +203,14 @@ Resources:
                 - echo "Building NestJS backend..."
                 - npm run build
                 - echo "Building Docker image..."
-                - docker build -t collectorcard-backend -f apps/api/Dockerfile .
-                - docker tag collectorcard-backend:latest 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
+                - docker build -t collectors-card/app -f apps/api/Dockerfile .
+                - docker tag collectors-card/app:latest 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectors-card/app:latest
             post_build:
               commands:
                 - echo "Pushing Docker image to ECR..."
-                - docker push 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
+                - docker push 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectors-card/app:latest
                 - echo "Writing image definitions file for CodeDeploy..."
-                - printf '[{"name":"collectorcard-api","imageUri":"782496497250.dkr.ecr.%s.amazonaws.com/collectorcard-backend:latest"}]' $AWS_DEFAULT_REGION > ../imagedefinitions.json
+                - printf '[{"name":"collectors-card/app","imageUri":"782496497250.dkr.ecr.%s.amazonaws.com/collectors-card/app:latest"}]' $AWS_DEFAULT_REGION > ../imagedefinitions.json
 
           artifacts:
             files:
