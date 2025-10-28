@@ -167,6 +167,10 @@ Resources:
             build:
               commands:
                 - npm run build
+                - npm run lint:check
+                - npm run format:check
+                - npm run type-check
+                - npm run audit
   #             - npm test
 
   BackendPipeline:
