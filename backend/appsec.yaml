@@ -1,0 +1,11 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::EKS::Service
+      Properties:
+        ClusterName: collectorcard-cluster
+        Namespace: default
+        ServiceName: collectorcard-api-svc
+        ImageConfiguration:
+          ContainerName: collectorcard-api
+          ImageURI: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectorcard-backend:latest
