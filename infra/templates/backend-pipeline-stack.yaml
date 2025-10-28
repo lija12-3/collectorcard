@@ -189,7 +189,7 @@ Resources:
                 - echo "Building NestJS backend..."
                 - npm run build
                 - echo "Building Docker image..."
-                - docker build -t collectorcard-backend .
+                - docker build -t collectorcard-backend -f apps/api/Dockerfile .
                 - docker tag collectorcard-backend:latest 782496497250.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectorcard-backend:latest
             post_build:
               commands:
