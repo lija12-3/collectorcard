@@ -28,7 +28,6 @@ phases:
   build:
     commands:
       - echo "Building NestJS backend..."
-      - cd backend
       - npm run build
       - echo "Building Docker image..."
       - docker build -t $IMAGE_REPO:$IMAGE_TAG -f apps/api/Dockerfile .
