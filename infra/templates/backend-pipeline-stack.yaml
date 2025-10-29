@@ -61,7 +61,7 @@ Conditions:
   IsDevelopment: !Equals [!Ref EnvironmentType, "Development"]
   CreateEKSDeployRole: !And
     - !Condition IsDevelopment
-    - !Equals [!Ref EKSDeployRoleArn, ""]      # (keeps your original logic)
+    - !Equals [!Ref EKSDeployRoleArn, ""]
   UseExistingEKSDeployRole: !And
     - !Condition IsDevelopment
     - !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
@@ -120,12 +120,36 @@ Resources:
             Principal:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        # replaced deprecated policy with attachable service-role policy
-        - arn:aws:iam::aws:policy/service-role/AWSCodePipelineServiceRole
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
-        - arn:aws:iam::aws:policy/IAMPassRole
+      Policies:
+        - PolicyName: PipelineInlinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}"
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}/*"
+
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: "*"
+
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                  - codeconnections:UseConnection
+                Resource: !Ref GitHubConnectionArn
+
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: "*"
 
   CodeBuildRole:
     Condition: IsDevelopment
@@ -171,35 +195,6 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-
-  CodeBuildAssumeRolePolicy:
-    Condition: CreateEKSDeployRole
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: AllowAssumeEKSDeployRole
-      Roles:
-        - !Ref CodeBuildRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: AllowAssumeEKSDeployRole
-            Effect: Allow
-            Action: sts:AssumeRole
-            Resource: !GetAtt EKSDeployRole.Arn
-
-  CodeBuildAssumeExistingRolePolicy:
-    Condition: UseExistingEKSDeployRole
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: AllowAssumeEKSDeployRoleExisting
-      Roles:
-        - !Ref CodeBuildRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Resource: !Ref EKSDeployRoleArn
 
   #########################################
   # CODEBUILD PROJECTS
