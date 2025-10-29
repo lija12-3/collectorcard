@@ -40,18 +40,6 @@ Parameters:
     Default: ""
     Description: Shared artifact S3 bucket name.
 
-  MainBranch:
-    Type: String
-    Default: main
-
-  StagingBranch:
-    Type: String
-    Default: staging
-
-  DevelopBranch:
-    Type: String
-    Default: develop
-
   FeatureBranch:
     Type: String
     Default: feat/CDEV-134_codepipeline
@@ -121,8 +109,8 @@ Resources:
   #########################################
   # DEVELOPMENT ACCOUNT RESOURCES
   #########################################
-  
-  # CodeBuild Role - Must be created FIRST
+
+  # CodeBuild Role
   CodeBuildRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -153,7 +141,7 @@ Resources:
                   - ecr:PutImage
                   - ecr:UploadLayerPart
                 Resource: arn:aws:ecr:us-east-1:782496497250:repository/collectors-card/app
-        - PolicyName: EKSDeploymentAccess
+        - PolicyName: EKSDescribeAccess
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -174,7 +162,7 @@ Resources:
                   - kms:DescribeKey
                 Resource: "*"
 
-  # EKS Deploy Role - Created AFTER CodeBuildRole
+  # EKS Deploy Role (trusted by CodeBuild)
   EKSDeployRole:
     Condition: CreateEKSDeployRole
     Type: AWS::IAM::Role
@@ -189,7 +177,7 @@ Resources:
               AWS: !GetAtt CodeBuildRole.Arn
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: EKSFullAccess
+        - PolicyName: EKSDeployPermissions
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -199,25 +187,20 @@ Resources:
                   - eks:ListClusters
                   - eks:DescribeNodegroup
                   - eks:ListNodegroups
-                  - eks:DescribeFargateProfile
-                  - eks:ListFargateProfiles
-                Resource: "*"
-        - PolicyName: EKSKubernetesAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
                   - eks:AccessKubernetesApi
                 Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: "*"
 
-  # Add AssumeRole permission to CodeBuildRole
+  # Allow CodeBuild to Assume the Deploy Role
   CodeBuildAssumeRolePolicy:
     Condition: CreateEKSDeployRole
     Type: AWS::IAM::Policy
     DependsOn: EKSDeployRole
     Properties:
-      PolicyName: AssumeEKSDeployRole
+      PolicyName: AllowAssumeEKSDeployRole
       Roles:
         - !Ref CodeBuildRole
       PolicyDocument:
@@ -225,16 +208,15 @@ Resources:
         Statement:
           - Sid: AllowAssumeEKSDeployRole
             Effect: Allow
-            Action:
-              - sts:AssumeRole
+            Action: sts:AssumeRole
             Resource: !GetAtt EKSDeployRole.Arn
 
-  # If using existing role, add assume role permission
+  # When user provides an existing EKSDeployRoleArn
   CodeBuildAssumeExistingRolePolicy:
     Condition: UseExistingEKSDeployRole
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: AssumeEKSDeployRole
+      PolicyName: AllowAssumeEKSDeployRole
       Roles:
         - !Ref CodeBuildRole
       PolicyDocument:
@@ -242,10 +224,10 @@ Resources:
         Statement:
           - Sid: AllowAssumeEKSDeployRole
             Effect: Allow
-            Action:
-              - sts:AssumeRole
+            Action: sts:AssumeRole
             Resource: !Ref EKSDeployRoleArn
 
+  # Pipeline Role
   PipelineRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -308,8 +290,6 @@ Resources:
   DeployBuildProject:
     Condition: IsDevelopment
     Type: AWS::CodeBuild::Project
-    DependsOn:
-      - CodeBuildRole
     Properties:
       Name: card-collectors-backend-deploy
       Description: Deploy backend to EKS Fargate
