@@ -122,78 +122,7 @@ Resources:
   # DEVELOPMENT ACCOUNT RESOURCES
   #########################################
   
-  # EKS Deploy Role - For kubectl operations
-  EKSDeployRole:
-    Condition: CreateEKSDeployRole
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: card-collectors-backend-deploy-role
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: !GetAtt CodeBuildRole.Arn
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: EKSFullAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - eks:DescribeCluster
-                  - eks:ListClusters
-                  - eks:DescribeNodegroup
-                  - eks:ListNodegroups
-                  - eks:DescribeFargateProfile
-                  - eks:ListFargateProfiles
-                Resource: "*"
-        - PolicyName: EKSKubernetesAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - eks:AccessKubernetesApi
-                Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
-
-  PipelineRole:
-    Condition: IsDevelopment
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: card-collectors-backend-pipeline-role
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: codepipeline.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: PipelineAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                  - s3:ListBucket
-                Resource:
-                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}"
-                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}/*"
-              - Effect: Allow
-                Action:
-                  - codebuild:StartBuild
-                  - codebuild:BatchGetBuilds
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - codeconnections:UseConnection
-                  - codestar-connections:UseConnection
-                Resource: !Ref GitHubConnectionArn
-
+  # CodeBuild Role - Must be created FIRST
   CodeBuildRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -234,14 +163,6 @@ Resources:
                   - eks:DescribeCluster
                   - eks:ListClusters
                 Resource: "*"
-              - Sid: AllowAssumeEKSDeployRole
-                Effect: Allow
-                Action:
-                  - sts:AssumeRole
-                Resource: !If
-                  - CreateEKSDeployRole
-                  - !GetAtt EKSDeployRole.Arn
-                  - !Ref EKSDeployRoleArn
         - PolicyName: AllowKMSDecryptForSharedArtifacts
           PolicyDocument:
             Version: '2012-10-17'
@@ -252,7 +173,115 @@ Resources:
                   - kms:Decrypt
                   - kms:DescribeKey
                 Resource: "*"
-  
+
+  # EKS Deploy Role - Created AFTER CodeBuildRole
+  EKSDeployRole:
+    Condition: CreateEKSDeployRole
+    Type: AWS::IAM::Role
+    DependsOn: CodeBuildRole
+    Properties:
+      RoleName: card-collectors-backend-deploy-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt CodeBuildRole.Arn
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EKSFullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                  - eks:DescribeNodegroup
+                  - eks:ListNodegroups
+                  - eks:DescribeFargateProfile
+                  - eks:ListFargateProfiles
+                Resource: "*"
+        - PolicyName: EKSKubernetesAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:AccessKubernetesApi
+                Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
+
+  # Add AssumeRole permission to CodeBuildRole
+  CodeBuildAssumeRolePolicy:
+    Condition: CreateEKSDeployRole
+    Type: AWS::IAM::Policy
+    DependsOn: EKSDeployRole
+    Properties:
+      PolicyName: AssumeEKSDeployRole
+      Roles:
+        - !Ref CodeBuildRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAssumeEKSDeployRole
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: !GetAtt EKSDeployRole.Arn
+
+  # If using existing role, add assume role permission
+  CodeBuildAssumeExistingRolePolicy:
+    Condition: UseExistingEKSDeployRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AssumeEKSDeployRole
+      Roles:
+        - !Ref CodeBuildRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAssumeEKSDeployRole
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: !Ref EKSDeployRoleArn
+
+  PipelineRole:
+    Condition: IsDevelopment
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: card-collectors-backend-pipeline-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}"
+                  - !Sub "arn:aws:s3:::${SharedArtifactBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - codeconnections:UseConnection
+                  - codestar-connections:UseConnection
+                Resource: !Ref GitHubConnectionArn
+
   #########################################
   # CODEBUILD PROJECTS
   #########################################
@@ -279,6 +308,8 @@ Resources:
   DeployBuildProject:
     Condition: IsDevelopment
     Type: AWS::CodeBuild::Project
+    DependsOn:
+      - CodeBuildRole
     Properties:
       Name: card-collectors-backend-deploy
       Description: Deploy backend to EKS Fargate
