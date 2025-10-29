@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: collectors-card-app-dev
-  namespace: collectors-card-app-dev
+  namespace: default
   labels:
     app: collectors-card-app
     environment: dev
 spec:
-  replicas: 1  # Start with 1 for dev
+  replicas: 1
   selector:
     matchLabels:
       app: collectors-card-app
@@ -19,34 +19,34 @@ spec:
         environment: dev
     spec:
       containers:
-      - name: collectors-card-app
-        image: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app:latest
-        ports:
-        - containerPort: 3000
-          protocol: TCP
-        env:
-        - name: NODE_ENV
-          value: "development"
-        - name: PORT
-          value: "3000"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "128m"
-          limits:
-            memory: "512Mi"
-            cpu: "256m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
+        - name: collectors-card-app
+          image: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app:latest
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "development"
+            - name: PORT
+              value: "3000"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "128m"
+            limits:
+              memory: "512Mi"
+              cpu: "256m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3

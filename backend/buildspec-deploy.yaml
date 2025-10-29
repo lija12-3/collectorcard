@@ -4,7 +4,7 @@ env:
   variables:
     AWS_DEFAULT_REGION: "us-east-1"
     EKS_CLUSTER_NAME: "dev-eks-fargate-cluster"
-    NAMESPACE: "collectors-card-app-dev"
+    NAMESPACE: "default"
     DEPLOYMENT_NAME: "collectors-card-app-dev"
     SERVICE_NAME: "collectors-card-service-dev"
     CONTAINER_NAME: "collectors-card-app"
@@ -38,7 +38,7 @@ phases:
           aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_DEFAULT_REGION"
         fi
       - echo "Verifying cluster access..."
-      - kubectl get nodes || kubectl get ns
+      - kubectl get ns
       - echo "Reading image URI from build artifact..."
       - cd $CODEBUILD_SRC_DIR
       - |
