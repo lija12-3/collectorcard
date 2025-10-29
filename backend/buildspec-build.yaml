@@ -11,14 +11,12 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      # Use two spaces indentation here
       - echo "Installing backend dependencies..."
       - cd backend
       - npm ci
 
   pre_build:
     commands:
-      # Use two spaces indentation here
       - echo "Logging into Amazon ECR..."
       - REGISTRY=$(echo $IMAGE_REPO | cut -d'/' -f1)
       - echo "Registry detected: $REGISTRY"
@@ -31,7 +29,6 @@ phases:
 
   build:
     commands:
-      # Use two spaces indentation here
       - echo "Building NestJS backend..."
       - npm run build
       - echo "Building Docker image..."
@@ -41,7 +38,6 @@ phases:
 
   post_build:
     commands:
-      # Use two spaces indentation here
       - echo "Pushing Docker images to ECR..."
       - docker push $IMAGE_REPO:$IMAGE_TAG
       - docker push $IMAGE_REPO:latest
@@ -52,7 +48,6 @@ phases:
 
 artifacts:
   files:
-    # Ensure these paths are correct relative to your build root
     - backend/k8s/**/*
     - build_output/image-tag.txt
     - build_output/image-uri.txt
