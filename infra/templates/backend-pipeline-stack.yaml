@@ -176,6 +176,15 @@ Resources:
               - Effect: Allow
                 Action: sts:AssumeRole
                 Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/card-collectors-backend-deploy-role
+        - PolicyName: EKSReadAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                Resource: "*"
 
   EKSDeployRole:
     Condition: CreateEKSDeployRole
