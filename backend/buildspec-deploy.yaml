@@ -9,7 +9,7 @@ env:
     SERVICE_NAME: "collectors-card-service-dev"
     CONTAINER_NAME: "collectors-card-app"
     IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
-    EKS_DEPLOY_ROLE_ARN: ""
+    EKS_DEPLOY_ROLE_ARN: "arn:aws:iam::068898927889:role/card-collectors-backend-deploy-role"
 
 phases:
   install:
