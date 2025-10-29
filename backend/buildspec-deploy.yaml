@@ -65,7 +65,6 @@ phases:
           echo "Deployment does not exist — creating resources from manifests..."
           kubectl apply -f k8s/deployment.yaml -n "$NAMESPACE"
           kubectl apply -f k8s/service.yaml -n "$NAMESPACE"
-          # ensure manifest container name matches; then set image
           kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
         fi
       - echo "⏳ Waiting for rollout to complete..."
