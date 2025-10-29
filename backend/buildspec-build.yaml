@@ -19,7 +19,7 @@ phases:
     commands:
       - echo "Logging into Amazon ECR..."
       - REGISTRY=$(echo $IMAGE_REPO | cut -d'/' -f1)
-      - echo "Registry detected: $REGISTRY"
+      - echo "Registry detected $REGISTRY"
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
       - echo "Generating image tag from commit hash..."
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -31,7 +31,7 @@ phases:
       - echo "Building NestJS backend..."
       - cd backend
       - npm run build
-      - echo "Building Docker image from $(pwd)..."
+      - echo "Building Docker image..."
       - docker build -t $IMAGE_REPO:$IMAGE_TAG .
       - docker tag $IMAGE_REPO:$IMAGE_TAG $IMAGE_REPO:latest
       - cd ..
