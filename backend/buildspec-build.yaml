@@ -49,3 +49,4 @@ artifacts:
     - build_output/image-tag.txt
     - build_output/image-uri.txt
   name: BuildArtifact
+# force pipeline rebuild Wed, Oct 29, 2025 10:08:52 AM
