@@ -68,12 +68,17 @@ Parameters:
   EKSDeployRoleArn:
     Type: String
     Default: ""
-    Description: ARN of the IAM role to assume for EKS deployment (optional).
+    Description: ARN of the IAM role to assume for EKS deployment (optional - will be created if not provided).
 
 Conditions:
   IsShared: !Equals [!Ref EnvironmentType, "Shared"]
   IsDevelopment: !Equals [!Ref EnvironmentType, "Development"]
-  HasEKSDeployRoleArn: !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
+  CreateEKSDeployRole: !And
+    - !Condition IsDevelopment
+    - !Equals [!Ref EKSDeployRoleArn, ""]
+  UseExistingEKSDeployRole: !And
+    - !Condition IsDevelopment
+    - !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
 
 Resources:
   #########################################
@@ -116,6 +121,43 @@ Resources:
   #########################################
   # DEVELOPMENT ACCOUNT RESOURCES
   #########################################
+  
+  # EKS Deploy Role - For kubectl operations
+  EKSDeployRole:
+    Condition: CreateEKSDeployRole
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: card-collectors-backend-deploy-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt CodeBuildRole.Arn
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EKSFullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                  - eks:DescribeNodegroup
+                  - eks:ListNodegroups
+                  - eks:DescribeFargateProfile
+                  - eks:ListFargateProfiles
+                Resource: "*"
+        - PolicyName: EKSKubernetesAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:AccessKubernetesApi
+                Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
+
   PipelineRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -192,14 +234,14 @@ Resources:
                   - eks:DescribeCluster
                   - eks:ListClusters
                 Resource: "*"
-              - Sid: AllowAssumeEKSRole
+              - Sid: AllowAssumeEKSDeployRole
                 Effect: Allow
                 Action:
                   - sts:AssumeRole
                 Resource: !If
-                  - HasEKSDeployRoleArn
+                  - CreateEKSDeployRole
+                  - !GetAtt EKSDeployRole.Arn
                   - !Ref EKSDeployRoleArn
-                  - !Ref "AWS::NoValue"
         - PolicyName: AllowKMSDecryptForSharedArtifacts
           PolicyDocument:
             Version: '2012-10-17'
@@ -210,6 +252,7 @@ Resources:
                   - kms:Decrypt
                   - kms:DescribeKey
                 Resource: "*"
+  
   #########################################
   # CODEBUILD PROJECTS
   #########################################
@@ -253,10 +296,13 @@ Resources:
           - Name: EKS_CLUSTER_NAME
             Value: !Ref EKSClusterName
           - Name: EKS_DEPLOY_ROLE_ARN
-            Value: !Ref EKSDeployRoleArn
+            Value: !If
+              - CreateEKSDeployRole
+              - !GetAtt EKSDeployRole.Arn
+              - !Ref EKSDeployRoleArn
       Source:
         Type: CODEPIPELINE
-      BuildSpec: backend/buildspec-deploy.yaml
+        BuildSpec: backend/buildspec-deploy.yaml
 
   #########################################
   # CODEPIPELINE
@@ -330,3 +376,10 @@ Outputs:
     Condition: IsDevelopment
     Description: Name of deploy CodeBuild project
     Value: !Ref DeployBuildProject
+
+  EKSDeployRoleArn:
+    Condition: CreateEKSDeployRole
+    Description: ARN of the EKS Deploy Role
+    Value: !GetAtt EKSDeployRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-EKSDeployRoleArn"
