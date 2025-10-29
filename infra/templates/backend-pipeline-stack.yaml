@@ -1,8 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  Reusable CloudFormation template for Card Collector project.
-  Can deploy either Shared Services (artifact bucket) or Development (pipeline + build)
-  based on the EnvironmentType parameter.
+  Card Collector CI/CD Pipeline
+  Creates shared artifact bucket or backend CodePipeline with build + deploy stages.
 
 Parameters:
   EnvironmentType:
@@ -10,7 +9,7 @@ Parameters:
     AllowedValues:
       - Shared
       - Development
-    Description: Specify whether this is a Shared or Development stack.
+    Description: Specify whether this is Shared or Development stack.
 
   SharedAccountId:
     Type: String
@@ -28,17 +27,16 @@ Parameters:
   RepoName:
     Type: String
     Default: collectorcard
-    Description: GitHub repository name (use just the repo name, not path).
+    Description: GitHub repository name.
 
   GitHubConnectionArn:
     Type: String
-    Default: ""
     Description: ARN for CodeStar GitHub connection.
 
   SharedArtifactBucketName:
     Type: String
     Default: ""
-    Description: Shared artifact S3 bucket name.
+    Description: Shared artifact S3 bucket name (from shared account).
 
   FeatureBranch:
     Type: String
@@ -50,13 +48,13 @@ Parameters:
 
   EKSClusterName:
     Type: String
-    Default: ""
-    Description: Name of the existing EKS Fargate cluster.
+    Default: dev-eks-fargate-cluster
+    Description: Name of existing EKS Fargate cluster.
 
   EKSDeployRoleArn:
     Type: String
     Default: ""
-    Description: ARN of the IAM role to assume for EKS deployment (optional - will be created if not provided).
+    Description: Optional ARN of existing EKS Deploy Role. Leave empty to auto-create.
 
 Conditions:
   IsShared: !Equals [!Ref EnvironmentType, "Shared"]
@@ -70,7 +68,7 @@ Conditions:
 
 Resources:
   #########################################
-  # SHARED SERVICES RESOURCES
+  # SHARED SERVICES
   #########################################
   SharedArtifactBucket:
     Condition: IsShared
@@ -107,10 +105,8 @@ Resources:
               - !Sub "arn:aws:s3:::${SharedArtifactBucket}/*"
 
   #########################################
-  # DEVELOPMENT ACCOUNT RESOURCES
+  # DEVELOPMENT ACCOUNT
   #########################################
-
-  # CodeBuild Role
   CodeBuildRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -128,11 +124,17 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
       Policies:
-        - PolicyName: CrossAccountECRPushAccess
+        - PolicyName: AllowKMSDecryptAndECR
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: AllowPushToSharedECR
+              - Sid: KMSDecrypt
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: "*"
+              - Sid: ECRPushAccess
                 Effect: Allow
                 Action:
                   - ecr:BatchCheckLayerAvailability
@@ -141,28 +143,19 @@ Resources:
                   - ecr:PutImage
                   - ecr:UploadLayerPart
                 Resource: arn:aws:ecr:us-east-1:782496497250:repository/collectors-card/app
-        - PolicyName: EKSDescribeAccess
+        - PolicyName: AllowEKSDescribe
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: AllowEKSDescribe
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - eks:DescribeCluster
                   - eks:ListClusters
                 Resource: "*"
-        - PolicyName: AllowKMSDecryptForSharedArtifacts
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: AllowKMSDecrypt
-                Effect: Allow
-                Action:
-                  - kms:Decrypt
-                  - kms:DescribeKey
-                Resource: "*"
 
-  # EKS Deploy Role (trusted by CodeBuild)
+  #########################################
+  # EKS DEPLOY ROLE (trusted by CodeBuild)
+  #########################################
   EKSDeployRole:
     Condition: CreateEKSDeployRole
     Type: AWS::IAM::Role
@@ -172,46 +165,46 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          # ✅ Trust CodeBuild Role to assume this
           - Effect: Allow
             Principal:
               AWS: !GetAtt CodeBuildRole.Arn
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: EKSDeployPermissions
+        - PolicyName: EKSDeploymentAccess
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: AllowEKSAccess
+              - Sid: EKSClusterAccess
                 Effect: Allow
                 Action:
                   - eks:DescribeCluster
                   - eks:ListClusters
-                  - eks:DescribeNodegroup
-                  - eks:ListNodegroups
                   - eks:AccessKubernetesApi
-                Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
-              - Sid: AllowAssumeRoleChaining
+                Resource: "*"
+              - Sid: EKSKubernetesPermissions
                 Effect: Allow
                 Action:
-                  - sts:AssumeRole
-                Resource: "*"
-        - PolicyName: KMSandECRSupport
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
+                  - eks:DescribeNodegroup
+                  - eks:ListNodegroups
+                  - eks:DescribeFargateProfile
+                  - eks:ListFargateProfiles
+                  - eks:AccessKubernetesApi
+                Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
+              - Sid: KMSAndECRSupport
+                Effect: Allow
                 Action:
                   - kms:Decrypt
                   - kms:DescribeKey
                   - ecr:GetAuthorizationToken
                 Resource: "*"
+              - Sid: AllowSTSChaining
+                Effect: Allow
+                Action: sts:AssumeRole
+                Resource: "*"
 
-  # Allow CodeBuild to Assume the Deploy Role
   CodeBuildAssumeRolePolicy:
     Condition: CreateEKSDeployRole
     Type: AWS::IAM::Policy
-    DependsOn: EKSDeployRole
     Properties:
       PolicyName: AllowAssumeEKSDeployRole
       Roles:
@@ -224,23 +217,23 @@ Resources:
             Action: sts:AssumeRole
             Resource: !GetAtt EKSDeployRole.Arn
 
-  # If using an existing deploy role
   CodeBuildAssumeExistingRolePolicy:
     Condition: UseExistingEKSDeployRole
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: AllowAssumeEKSDeployRole
+      PolicyName: AllowAssumeEKSDeployRoleExisting
       Roles:
         - !Ref CodeBuildRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Sid: AllowAssumeEKSDeployRole
-            Effect: Allow
+          - Effect: Allow
             Action: sts:AssumeRole
             Resource: !Ref EKSDeployRoleArn
 
-  # Pipeline Role
+  #########################################
+  # PIPELINE ROLE
+  #########################################
   PipelineRole:
     Condition: IsDevelopment
     Type: AWS::IAM::Role
@@ -388,22 +381,22 @@ Resources:
 Outputs:
   ArtifactBucketName:
     Condition: IsShared
-    Description: Name of the shared artifact bucket
     Value: !Ref SharedArtifactBucket
+    Description: Name of the shared artifact bucket
 
   PipelineName:
     Condition: IsDevelopment
-    Description: Name of backend pipeline
     Value: !Ref BackendPipeline
+    Description: Name of backend pipeline
 
   DeployProjectName:
     Condition: IsDevelopment
-    Description: Name of deploy CodeBuild project
     Value: !Ref DeployBuildProject
+    Description: Deploy CodeBuild project name
 
   EKSDeployRoleArn:
     Condition: CreateEKSDeployRole
-    Description: ARN of the EKS Deploy Role
     Value: !GetAtt EKSDeployRole.Arn
+    Description: ARN of the EKS Deploy Role
     Export:
       Name: !Sub "${AWS::StackName}-EKSDeployRoleArn"
