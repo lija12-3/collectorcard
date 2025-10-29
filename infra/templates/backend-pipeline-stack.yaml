@@ -222,7 +222,7 @@ Resources:
             Value: !Ref Region
       Source:
         Type: CODEPIPELINE
-      BuildSpec: backend/buildspec-build.yaml
+        BuildSpec: backend/buildspec-build.yaml
 
   DeployBuildProject:
     Condition: IsDevelopment
@@ -247,7 +247,7 @@ Resources:
             Value: !Ref EKSDeployRoleArn
       Source:
         Type: CODEPIPELINE
-        BuildSpec: backend/buildspec-deploy.yaml
+      BuildSpec: backend/buildspec-deploy.yaml
 
   #########################################
   # CODEPIPELINE
