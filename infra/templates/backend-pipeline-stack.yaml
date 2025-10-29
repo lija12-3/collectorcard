@@ -200,7 +200,16 @@ Resources:
                   - HasEKSDeployRoleArn
                   - !Ref EKSDeployRoleArn
                   - !Ref "AWS::NoValue"
-
+        - PolicyName: AllowKMSDecryptForSharedArtifacts
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowKMSDecrypt
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: "*"
   #########################################
   # CODEBUILD PROJECTS
   #########################################
