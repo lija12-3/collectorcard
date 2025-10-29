@@ -14,7 +14,7 @@ phases:
       python: 3.9
     commands:
       - set -euo pipefail
-      - echo "🔧 Installing kubectl if missing..."
+      - echo "Installing kubectl if missing..."
       - |
         if ! command -v kubectl &> /dev/null; then
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
@@ -22,12 +22,12 @@ phases:
           mv kubectl /usr/local/bin/
         fi
       - kubectl version --client || true
-      - echo "📁 Changing to backend directory..."
+      - echo "Changing to backend directory..."
       - cd backend
 
   pre_build:
     commands:
-      - echo "🔐 Configuring kubeconfig for EKS cluster $EKS_CLUSTER_NAME..."
+      - echo "Configuring kubeconfig for EKS cluster..."
       - |
         if [ -n "$EKS_DEPLOY_ROLE_ARN" ] && [ "$EKS_DEPLOY_ROLE_ARN" != " " ]; then
           echo "Using role ARN: $EKS_DEPLOY_ROLE_ARN to update kubeconfig"
@@ -35,9 +35,9 @@ phases:
         else
           aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_DEFAULT_REGION"
         fi
-      - echo "✅ Verifying cluster access..."
-      - kubectl get nodes || (kubectl get ns && echo "cluster access ok")
-      - echo "📦 Reading image URI from build artifact (prefer image-uri.txt)..."
+      - echo "Verifying cluster access..."
+      - kubectl get nodes || kubectl get ns
+      - echo "Reading image URI from build artifact..."
       - cd $CODEBUILD_SRC_DIR
       - |
         if [ -f build_output/image-uri.txt ]; then
@@ -49,32 +49,31 @@ phases:
           echo "ERROR: image-uri.txt or image-tag.txt not found in artifact"
           exit 1
         fi
-      - echo "✅ Will deploy image: $IMAGE_URI"
-      - echo "🧱 Ensuring namespace '$NAMESPACE' exists..."
+      - echo "Will deploy image:" $IMAGE_URI
+      - echo "Ensuring namespace exists..."
       - kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$NAMESPACE"
       - cd backend
 
   build:
     commands:
-      - echo "🚀 Deploying to namespace: $NAMESPACE"
+      - echo "Deploying to namespace:" $NAMESPACE
       - |
         if kubectl get deployment collectors-card-app -n "$NAMESPACE" >/dev/null 2>&1; then
-          echo "Deployment exists — updating image..."
+          echo "Deployment exists - updating image..."
           kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
         else
-          echo "Deployment does not exist — creating resources from manifests..."
+          echo "Deployment does not exist - creating resources from manifests..."
           kubectl apply -f k8s/deployment.yaml -n "$NAMESPACE"
           kubectl apply -f k8s/service.yaml -n "$NAMESPACE"
           kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
         fi
-      - echo "⏳ Waiting for rollout to complete..."
+      - echo "Waiting for rollout to complete..."
       - kubectl rollout status deployment/collectors-card-app -n "$NAMESPACE" --timeout=10m
 
   post_build:
     commands:
-      - echo "✅ Deployment completed successfully!"
-      - echo "🔍 Deployment details:"
+      - echo "Deployment completed successfully!"
+      - echo "Deployment details:"
       - kubectl get deployment collectors-card-app -n "$NAMESPACE" -o wide || true
-      - echo ""
-      - echo "📊 Pod status:"
+      - echo "Pod status:"
       - kubectl get pods -n "$NAMESPACE" -l app=collectors-card-app || true
