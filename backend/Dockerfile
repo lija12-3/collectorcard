@@ -4,13 +4,12 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
-COPY apps/api ./apps/api
-COPY tsconfig.json ./tsconfig.json
+COPY . .
 
 RUN npx tsc -p tsconfig.json
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-# ✅ Run from where TypeScript actually outputs JS
-CMD ["node", "dist/main.js"]
+# ✅ Corrected entrypoint path:
+CMD ["node", "dist/apps/api/src/main.js"]
