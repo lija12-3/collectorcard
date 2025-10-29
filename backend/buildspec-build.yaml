@@ -45,7 +45,7 @@ phases:
       - mkdir -p build_output
       - echo $IMAGE_TAG > build_output/image-tag.txt
       - echo $IMAGE_REPO:$IMAGE_TAG > build_output/image-uri.txt
-      - echo "✅ Build stage completed successfully."
+      - echo "Build stage completed successfully."
 
 artifacts:
   files:
