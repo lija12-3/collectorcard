@@ -5,6 +5,9 @@ env:
     AWS_DEFAULT_REGION: "us-east-1"
     EKS_CLUSTER_NAME: "dev-eks-fargate-cluster"
     NAMESPACE: "collectors-card-app-dev"
+    DEPLOYMENT_NAME: "collectors-card-app-dev"
+    SERVICE_NAME: "collectors-card-service-dev"
+    CONTAINER_NAME: "collectors-card-app"
     IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
     EKS_DEPLOY_ROLE_ARN: ""
 
@@ -57,22 +60,22 @@ phases:
     commands:
       - echo "Deploying to namespace:" $NAMESPACE
       - |
-        if kubectl get deployment collectors-card-app -n "$NAMESPACE" >/dev/null 2>&1; then
+        if kubectl get deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
           echo "Deployment exists - updating image..."
-          kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
+          kubectl set image deployment/"$DEPLOYMENT_NAME" "$CONTAINER_NAME"="$IMAGE_URI" -n "$NAMESPACE" --record
         else
           echo "Deployment does not exist - creating resources from manifests..."
           kubectl apply -f k8s/deployment.yaml -n "$NAMESPACE"
           kubectl apply -f k8s/service.yaml -n "$NAMESPACE"
-          kubectl set image deployment/collectors-card-app collectors-card-app="$IMAGE_URI" -n "$NAMESPACE" --record
+          kubectl set image deployment/"$DEPLOYMENT_NAME" "$CONTAINER_NAME"="$IMAGE_URI" -n "$NAMESPACE" --record
         fi
       - echo "Waiting for rollout to complete..."
-      - kubectl rollout status deployment/collectors-card-app -n "$NAMESPACE" --timeout=10m
+      - kubectl rollout status deployment/"$DEPLOYMENT_NAME" -n "$NAMESPACE" --timeout=10m
 
   post_build:
     commands:
       - echo "Deployment completed successfully!"
       - echo "Deployment details:"
-      - kubectl get deployment collectors-card-app -n "$NAMESPACE" -o wide || true
+      - kubectl get deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" -o wide || true
       - echo "Pod status:"
-      - kubectl get pods -n "$NAMESPACE" -l app=collectors-card-app || true
+      - kubectl get pods -n "$NAMESPACE" -l app="$CONTAINER_NAME" || true
