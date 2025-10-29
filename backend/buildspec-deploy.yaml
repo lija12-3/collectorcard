@@ -13,7 +13,6 @@ phases:
     runtime-versions:
       python: 3.9
     commands:
-      - set -euo pipefail
       - echo "Installing kubectl if missing..."
       - |
         if ! command -v kubectl &> /dev/null; then
