@@ -172,6 +172,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
+          # ✅ Trust CodeBuild Role to assume this
           - Effect: Allow
             Principal:
               AWS: !GetAtt CodeBuildRole.Arn
@@ -181,7 +182,8 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
+              - Sid: AllowEKSAccess
+                Effect: Allow
                 Action:
                   - eks:DescribeCluster
                   - eks:ListClusters
@@ -189,9 +191,20 @@ Resources:
                   - eks:ListNodegroups
                   - eks:AccessKubernetesApi
                 Resource: !Sub "arn:aws:eks:${Region}:${AWS::AccountId}:cluster/${EKSClusterName}"
-              - Effect: Allow
+              - Sid: AllowAssumeRoleChaining
+                Effect: Allow
                 Action:
                   - sts:AssumeRole
+                Resource: "*"
+        - PolicyName: KMSandECRSupport
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                  - ecr:GetAuthorizationToken
                 Resource: "*"
 
   # Allow CodeBuild to Assume the Deploy Role
@@ -211,7 +224,7 @@ Resources:
             Action: sts:AssumeRole
             Resource: !GetAtt EKSDeployRole.Arn
 
-  # When user provides an existing EKSDeployRoleArn
+  # If using an existing deploy role
   CodeBuildAssumeExistingRolePolicy:
     Condition: UseExistingEKSDeployRole
     Type: AWS::IAM::Policy
