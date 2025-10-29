@@ -184,7 +184,9 @@ Resources:
                 Action:
                   - eks:DescribeCluster
                   - eks:ListClusters
-                Resource: "*"
+                Resource:
+                  - !Sub arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/${EKSClusterName}
+                  - "*"
 
   EKSDeployRole:
     Condition: CreateEKSDeployRole
