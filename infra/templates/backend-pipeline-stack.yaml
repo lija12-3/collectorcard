@@ -61,7 +61,7 @@ Conditions:
   IsDevelopment: !Equals [!Ref EnvironmentType, "Development"]
   CreateEKSDeployRole: !And
     - !Condition IsDevelopment
-    - !Equals [!Ref EKSDeployRoleArn, ""]
+    - !Equals [!Ref EKSDeployRoleArn, ""]      # (keeps your original logic)
   UseExistingEKSDeployRole: !And
     - !Condition IsDevelopment
     - !Not [!Equals [!Ref EKSDeployRoleArn, ""]]
@@ -121,7 +121,8 @@ Resources:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        # replaced deprecated policy with attachable service-role policy
+        - arn:aws:iam::aws:policy/service-role/AWSCodePipelineServiceRole
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
         - arn:aws:iam::aws:policy/IAMPassRole
@@ -170,6 +171,35 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  CodeBuildAssumeRolePolicy:
+    Condition: CreateEKSDeployRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AllowAssumeEKSDeployRole
+      Roles:
+        - !Ref CodeBuildRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAssumeEKSDeployRole
+            Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !GetAtt EKSDeployRole.Arn
+
+  CodeBuildAssumeExistingRolePolicy:
+    Condition: UseExistingEKSDeployRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AllowAssumeEKSDeployRoleExisting
+      Roles:
+        - !Ref CodeBuildRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !Ref EKSDeployRoleArn
 
   #########################################
   # CODEBUILD PROJECTS
@@ -301,3 +331,24 @@ Outputs:
     Value: !GetAtt EKSDeployRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-EKSDeployRoleArn"
+
+  PipelineRoleArn:
+    Condition: IsDevelopment
+    Description: ARN of the CodePipeline Role
+    Value: !GetAtt PipelineRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-PipelineRoleArn"
+
+  CodeBuildRoleArn:
+    Condition: IsDevelopment
+    Description: ARN of the CodeBuild Role
+    Value: !GetAtt CodeBuildRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CodeBuildRoleArn"
+
+  DeployRoleArnOutput:
+    Condition: CreateEKSDeployRole
+    Description: ARN of the generated Deploy Role (if created)
+    Value: !GetAtt EKSDeployRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DeployRoleArn"
