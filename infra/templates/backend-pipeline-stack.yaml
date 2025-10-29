@@ -310,7 +310,7 @@ Resources:
                 Provider: CodeBuild
                 Version: 1
               InputArtifacts:
-                - Name: SourceOutput 
+                - Name: BuildArtifact
               Configuration:
                 ProjectName: !Ref DeployBuildProject
               RunOrder: 1

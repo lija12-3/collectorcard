@@ -47,6 +47,7 @@ phases:
 artifacts:
   files:
     - backend/k8s/**/*
+    - backend/buildspec-deploy.yaml  
     - build_output/image-tag.txt
     - build_output/image-uri.txt
   name: BuildArtifact
