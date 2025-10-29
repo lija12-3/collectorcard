@@ -177,7 +177,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !GetAtt CodeBuildRole.Arn
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/card-collectors-backend-codebuild-role"
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
