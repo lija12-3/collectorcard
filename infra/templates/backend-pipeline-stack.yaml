@@ -170,6 +170,8 @@ Resources:
   EKSDeployRole:
     Condition: CreateEKSDeployRole
     Type: AWS::IAM::Role
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Delete
     Properties:
       RoleName: card-collectors-backend-deploy-role
       AssumeRolePolicyDocument:
@@ -177,7 +179,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/card-collectors-backend-codebuild-role"
+              AWS: !Sub "arn:aws:iam::${DevAccountId}:role/card-collectors-backend-codebuild-role"
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
