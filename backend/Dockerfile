@@ -13,3 +13,6 @@ EXPOSE 3000
 
 # ✅ Corrected entrypoint path:
 CMD ["node", "dist/apps/api/src/main.js"]
+
+
+
