@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: collectors-card-service-dev
-  namespace: default
+  namespace: dev-sample
   labels:
     app: collectors-card-app
     environment: dev

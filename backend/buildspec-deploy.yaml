@@ -4,7 +4,7 @@ env:
   variables:
     AWS_DEFAULT_REGION: "us-east-1"
     EKS_CLUSTER_NAME: "dev-eks-fargate-cluster"
-    NAMESPACE: "default"
+    NAMESPACE: "dev-sample"
     DEPLOYMENT_NAME: "collectors-card-app-dev"
     SERVICE_NAME: "collectors-card-service-dev"
     CONTAINER_NAME: "collectors-card-app"
