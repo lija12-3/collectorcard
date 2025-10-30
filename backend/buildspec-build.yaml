@@ -3,7 +3,6 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: "us-east-1"
-    IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
 
 phases:
   install:
@@ -18,10 +17,9 @@ phases:
   pre_build:
     commands:
       - echo "Logging into Amazon ECR..."
-      - REGISTRY=$(echo $IMAGE_REPO | cut -d'/' -f1)
-      - echo "Registry detected $REGISTRY"
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
-      - echo "Generating image tag from commit hash..."
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - IMAGE_REPO="$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectors-card/app"
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:-latest}
       - echo "Using IMAGE_TAG=$IMAGE_TAG"
