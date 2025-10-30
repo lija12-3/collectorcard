@@ -16,10 +16,15 @@ phases:
 
   pre_build:
     commands:
-      - echo "Logging into Amazon ECR..."
-      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - IMAGE_REPO="$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/collectors-card/app"
+      - echo "Logging into Amazon ECR in target account..."
+      # Target ECR account where the repo exists
+      - TARGET_ACCOUNT_ID=782496497250
+      - TARGET_REGION=$AWS_DEFAULT_REGION
+      - IMAGE_REPO_NAME=collectors-card/app
+      - IMAGE_REPO="$TARGET_ACCOUNT_ID.dkr.ecr.$TARGET_REGION.amazonaws.com/$IMAGE_REPO_NAME"
+      - echo "Authenticating to $IMAGE_REPO ..."
+      - aws ecr get-login-password --region $TARGET_REGION | docker login --username AWS --password-stdin $TARGET_ACCOUNT_ID.dkr.ecr.$TARGET_REGION.amazonaws.com
+      - echo "Generating image tag from commit hash..."
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:-latest}
       - echo "Using IMAGE_TAG=$IMAGE_TAG"
@@ -36,7 +41,7 @@ phases:
 
   post_build:
     commands:
-      - echo "Pushing Docker images to ECR..."
+      - echo "Pushing Docker images to ECR in target account..."
       - docker push $IMAGE_REPO:$IMAGE_TAG
       - docker push $IMAGE_REPO:latest
       - echo "Writing image tag and URI for deploy stage..."
