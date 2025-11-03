@@ -1,0 +1,58 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing backend dependencies..."
+      - cd backend
+      - npm ci
+      - cd ..
+
+  pre_build:
+    commands:
+      - echo "Logging into Amazon ECR in target account..."
+      - TARGET_ACCOUNT_ID=782496497250
+      - TARGET_REGION=$AWS_DEFAULT_REGION
+      - IMAGE_REPO_NAME=collectors-card/app
+      - IMAGE_REPO="$TARGET_ACCOUNT_ID.dkr.ecr.$TARGET_REGION.amazonaws.com/$IMAGE_REPO_NAME"
+      - echo "Authenticating to $IMAGE_REPO ..."
+      - aws ecr get-login-password --region $TARGET_REGION | docker login --username AWS --password-stdin $TARGET_ACCOUNT_ID.dkr.ecr.$TARGET_REGION.amazonaws.com
+
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - TIMESTAMP=$(date +%Y%m%d%H%M%S)
+      - IMAGE_TAG="${COMMIT_HASH}-${TIMESTAMP}"
+      - echo "Using IMAGE_TAG=$IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building NestJS backend..."
+      - cd backend
+      - npm run build
+      - echo "Building Docker image with tags: $IMAGE_TAG and latest..."
+      - docker build -t $IMAGE_REPO:$IMAGE_TAG -t $IMAGE_REPO:latest .
+      - cd ..
+
+  post_build:
+    commands:
+      - echo "Pushing Docker images to ECR in target account..."
+      - docker push $IMAGE_REPO:$IMAGE_TAG
+      - docker push $IMAGE_REPO:latest
+      - echo "Writing image tag and URI for deploy stage..."
+      - mkdir -p build_output
+      - echo $IMAGE_TAG > build_output/image-tag.txt
+      - echo $IMAGE_REPO:$IMAGE_TAG > build_output/image-uri.txt
+      - echo "Build stage completed successfully."
+
+artifacts:
+  files:
+    - backend/k8s/**/*
+    - backend/buildspec-deploy.yaml
+    - build_output/image-tag.txt
+    - build_output/image-uri.txt
+  name: BuildArtifact
