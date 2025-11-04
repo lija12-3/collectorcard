@@ -3,6 +3,8 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: "us-east-1"
+    APP_PATH: "backend/apps/api"        
+    DOCKERFILE_PATH: "backend/apps/api/Dockerfile" 
 
 phases:
   install:
@@ -31,16 +33,13 @@ phases:
 
   build:
     commands:
-      - echo "Building NestJS backend..."
-      - cd backend
-      - npm run build
-      - echo "Building Docker image with tag: $IMAGE_TAG"
-      - docker build -t $IMAGE_REPO:$IMAGE_TAG .
-      - cd ..
+      - echo "Building Docker image for API app..."
+      - docker build -t $IMAGE_REPO:$IMAGE_TAG -f $DOCKERFILE_PATH .
+      - echo "Docker image built successfully."
 
   post_build:
     commands:
-      - echo "Pushing Docker image to ECR in target account..."
+      - echo "Pushing Docker image to ECR..."
       - docker push $IMAGE_REPO:$IMAGE_TAG
       - echo "Writing image tag and URI for deploy stage..."
       - mkdir -p build_output
