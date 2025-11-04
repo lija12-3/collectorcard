@@ -34,15 +34,14 @@ phases:
       - echo "Building NestJS backend..."
       - cd backend
       - npm run build
-      - echo "Building Docker image with tags: $IMAGE_TAG and latest..."
-      - docker build -t $IMAGE_REPO:$IMAGE_TAG -t $IMAGE_REPO:latest .
+      - echo "Building Docker image with tag: $IMAGE_TAG"
+      - docker build -t $IMAGE_REPO:$IMAGE_TAG .
       - cd ..
 
   post_build:
     commands:
-      - echo "Pushing Docker images to ECR in target account..."
+      - echo "Pushing Docker image to ECR in target account..."
       - docker push $IMAGE_REPO:$IMAGE_TAG
-      - docker push $IMAGE_REPO:latest
       - echo "Writing image tag and URI for deploy stage..."
       - mkdir -p build_output
       - echo $IMAGE_TAG > build_output/image-tag.txt
