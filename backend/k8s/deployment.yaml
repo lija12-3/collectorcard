@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: collectors-card-app-dev
+  name: collectors-card-app-test
   namespace: dev-sample
   labels:
     app: collectors-card-app
