@@ -1,0 +1,85 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+    EKS_CLUSTER_NAME: "dev-eks-fargate-cluster"
+    NAMESPACE: "dev-sample"
+    DEPLOYMENT_NAME: "collectors-card-app-dev"
+    SERVICE_NAME: "collectors-card-service-dev"
+    CONTAINER_NAME: "collectors-card-app"
+    IMAGE_REPO: "782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app"
+    EKS_DEPLOY_ROLE_ARN: "arn:aws:iam::068898927889:role/card-collectors-backend-deploy-role"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo "Installing kubectl if missing..."
+      - |
+        if ! command -v kubectl &> /dev/null; then
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl /usr/local/bin/
+        fi
+      - kubectl version --client || true
+
+  pre_build:
+    commands:
+      - echo "Configuring kubeconfig for EKS cluster..."
+      - |
+        if [ -n "$EKS_DEPLOY_ROLE_ARN" ] && [ "$EKS_DEPLOY_ROLE_ARN" != " " ]; then
+          echo "Using role ARN: $EKS_DEPLOY_ROLE_ARN to update kubeconfig"
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_DEFAULT_REGION" --role-arn "$EKS_DEPLOY_ROLE_ARN"
+        else
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_DEFAULT_REGION"
+        fi
+      - echo "Verifying cluster access..."
+      - kubectl get ns
+
+      - echo "Reading image URI from build artifact..."
+      - cd $CODEBUILD_SRC_DIR
+      - |
+        if [ -f build_output/image-uri.txt ]; then
+          IMAGE_URI=$(cat build_output/image-uri.txt)
+        elif [ -f build_output/image-tag.txt ]; then
+          IMAGE_TAG=$(cat build_output/image-tag.txt)
+          IMAGE_URI="$IMAGE_REPO:$IMAGE_TAG"
+        else
+          echo "ERROR: image-uri.txt or image-tag.txt not found in artifact"
+          exit 1
+        fi
+      - echo "Will deploy image: $IMAGE_URI"
+
+      - echo "Ensuring namespace exists..."
+      - kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$NAMESPACE"
+
+  build:
+    commands:
+      - echo "Deploying to namespace: $NAMESPACE"
+      - cd backend
+      - |
+        if kubectl get deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+          echo "Deployment exists - updating image..."
+          kubectl set image deployment/"$DEPLOYMENT_NAME" "$CONTAINER_NAME"="$IMAGE_URI" -n "$NAMESPACE" --record
+        else
+          echo "Deployment does not exist - creating resources..."
+          kubectl apply -f k8s/deployment.yaml -n "$NAMESPACE"
+          kubectl apply -f k8s/service.yaml -n "$NAMESPACE"
+          kubectl apply -f k8s/ingress.yaml -n "$NAMESPACE" || echo "No ingress.yaml found, skipping..."
+          kubectl set image deployment/"$DEPLOYMENT_NAME" "$CONTAINER_NAME"="$IMAGE_URI" -n "$NAMESPACE" --record
+        fi
+
+      - echo "Waiting for rollout to complete..."
+      - kubectl rollout status deployment/"$DEPLOYMENT_NAME" -n "$NAMESPACE" --timeout=10m
+
+  post_build:
+    commands:
+      - echo "Deployment completed successfully!"
+      - echo "Deployment details:"
+      - kubectl get deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" -o wide || true
+      - echo "Pod status:"
+      - kubectl get pods -n "$NAMESPACE" -l app="$CONTAINER_NAME" || true
+      - echo "Service details:"
+      - kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" || true
