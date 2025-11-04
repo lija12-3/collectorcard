@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: collectors-card-app
-          image: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app:latest
+          image: 782496497250.dkr.ecr.us-east-1.amazonaws.com/collectors-card/app
           ports:
             - containerPort: 3000
               protocol: TCP
